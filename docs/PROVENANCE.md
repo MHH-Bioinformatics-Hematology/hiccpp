@@ -13,6 +13,14 @@
   ([aidenlab/Juicebox](https://github.com/aidenlab/Juicebox), MIT licence):
   version 8 by release 1.22.01 (`juicebox.tools.utils.original.Preprocessor`
   with `VERSION = 8`) and version 9 by release 2.20.00 (`VERSION = 9`).
+- **Writing** follows Juicer tools 1.22.01 (Juicebox tag `1.22`) for version 8
+  and 2.20.00 (tag `v2.20.00`) for version 9:
+  `juicebox.tools.utils.original.Preprocessor`, `MatrixPP`,
+  `MatrixZoomDataPP`, `BlockPP` and `ExpectedValueCalculation`, and
+  `juicebox.tools.utils.norm.NormalizationCalculations`, `ZeroScale`,
+  `final2.FinalScale`, `NormVectorUpdater` and `NormalizationVectorUpdater`,
+  re-implemented in `src/writer.cpp` and `src/norms.cpp`, which name the Java
+  method each part corresponds to.
 - hic2cool 1.0.1 ([4dn-dcic/hic2cool](https://github.com/4dn-dcic/hic2cool),
   MIT licence) served as a second reading of the version 8 layout.
 

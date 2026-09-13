@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(hicfilecpp
-    VERSION 0.1.0
+    VERSION 0.2.0
     DESCRIPTION "C++ reader and writer of the Juicer .hic format, API-compatible with hicstraw"
     LANGUAGES CXX)
 
@@ -28,7 +28,10 @@ find_package(Threads REQUIRED)
 add_library(hicfilecpp
     src/codec.cpp
     src/io.cpp
-    src/reader.cpp)
+    src/norms.cpp
+    src/output.cpp
+    src/reader.cpp
+    src/writer.cpp)
 add_library(hicfilecpp::hicfilecpp ALIAS hicfilecpp)
 
 target_compile_features(hicfilecpp PUBLIC cxx_std_20)

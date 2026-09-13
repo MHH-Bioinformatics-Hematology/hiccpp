@@ -1,10 +1,10 @@
-# Reproduced hicstraw behaviour and deliberate deviations
+# Reproduced behaviour and deliberate deviations
 
-hicfilecpp reproduces what hicstraw 1.3.1 returns, including behaviour that
-looks surprising. Each reproduced item is exercised by the harness cases named
-in brackets, which run the same queries through hicstraw and hicfilecpp.
+hicfilecpp reproduces what hicstraw 1.3.1 returns and what Juicer tools pre and
+addNorm write, including behaviour that looks surprising. Each reproduced item
+is exercised by the harness cases named in brackets.
 
-## hicstraw behaviour reproduced as is
+## Reading: hicstraw behaviour reproduced as is
 
 1. `getRecords` reports `binX` and `binY` as genomic start positions (bin
    times resolution), not bins; the region bounds are inclusive on both ends.
@@ -40,7 +40,7 @@ in brackets, which run the same queries through hicstraw and hicfilecpp.
    [R.J8F.FRAG.*, M.J8F.matrices]
 10. A repeated chromosome name resolves to its last occurrence.
 
-## Deliberate deviations
+## Reading: deliberate deviations
 
 1. Versions other than 8 and 9 raise `HicError("Version N is not supported:
    hicfilecpp reads .hic versions 8 and 9")`. hicstraw also reads versions 6
@@ -63,3 +63,55 @@ in brackets, which run the same queries through hicstraw and hicfilecpp.
 8. Blocks inflate to any size. hicstraw reserves ten times the compressed
    size and truncates larger blocks.
 9. Remote (http) files are not supported.
+
+## Writing: Juicer tools behaviour reproduced as is
+
+Every write case runs Juicer tools pre on the same contacts and compares the
+files through hicstraw [W.*].
+
+1. A zoom level's header holds the sum of its contacts, counting
+   off-diagonal intra-chromosomal contacts twice, and 0 for the occupied cell
+   count and both percentiles: Juicer writes the header before the blocks
+   that would fill them in. hicstraw's inter-chromosomal "oe" divides by that
+   sum.
+2. Normalization vectors hold `length / binSize + 2` entries.
+3. VC is the row sum, VC_SQRT its square root, KR the Knight-Ruiz balancing
+   with Juicer's row tossing (percentile thresholds of 1, 2, 3, 4 and 10
+   percent of the non-zero row sums, at most six attempts, the fifth always
+   discarded) and SCALE Juicer's FinalScale; every vector is scaled so the
+   normalized matrix keeps the observed sum. A KR that never converges is
+   written as all-NaN, as Juicer writes it.
+4. Version 8 files use the double arithmetic of 1.22.01 and commons-math 2
+   percentiles; version 9 files use the float vectors of 2.20.00 and the
+   commons-math3 LEGACY percentile.
+5. Expected values use Juicer's smoothing window of at least 400 contacts and
+   per-chromosome scale factors, from the raw contacts for "NONE" and from the
+   normalized records for each normalization.
+6. The whole-genome "All" matrix bins every pixel at the kilobase position of
+   its bin start, with a bin size of the genome length in kilobases divided by
+   500.
+7. Version 9 numbers intra-chromosomal blocks by their log2 distance from
+   the diagonal and chooses 16 or 32 bit row and column indexes per block.
+
+## Writing: deliberate deviations
+
+1. The bytes differ from Juicer's: matrix headers follow their blocks, version
+   8 blocks choose between the list-of-rows and dense layouts the way 1.22.01
+   does but compression may differ, and the header carries the "software"
+   attribute ("hicfilecpp <version>" unless set) and the caller's attributes,
+   not Juicer's `hicFileScalingFactor`, `nviIndex` and `nviLength`.
+2. Fragment resolutions, genome-wide and inter-chromosomal normalizations and
+   the filters and statistics options of pre are not written.
+3. Juicer skips a chromosome's normalization when its Java heap looks too
+   small (records times 1000 at least the maximum heap); hicfilecpp always
+   computes it. Juicer 2.20.00 spills blocks to temporary files and may then
+   sum repeated non-integer counts in another order; such counts agree to
+   floating point rounding.
+4. Normalization vectors are kept in memory until the footer is written,
+   eight bytes per bin per normalization.
+5. addNorm refuses files with FRAG resolutions, where Juicer would also
+   normalize the fragment maps. Like Juicer it replaces the normalizations a
+   file already holds.
+6. Non-finite counts, pixels outside their chromosome, a chromosome named
+   "All", repeated chromosome names and lengths above 2147483647 raise
+   `HicError`.

@@ -1,7 +1,9 @@
 # hicstraw to C++ API mapping
 
-hicfilecpp reproduces the reading API of hicstraw 1.3.1. Names, parameters
-and semantics follow hicstraw; the spelling follows C++.
+hicfilecpp reproduces the reading API of hicstraw 1.3.1 and the writing of
+Juicer tools pre and addNorm (1.22.01 for version 8, 2.20.00 for version 9).
+Names, parameters and semantics follow those programs; the spelling follows
+C++.
 
 Conventions:
 
@@ -53,3 +55,27 @@ any normalization the file holds (`"VC"`, `"VC_SQRT"`, `"KR"`, `"SCALE"`,
 | `MatrixZoomData::forEachBlock(visit, threads)` | every block in ascending number, decoded on several threads |
 
 Errors are `hicfilecpp::HicError`, derived from `std::runtime_error`.
+
+## Writing
+
+| Juicer tools | C++ (hicfilecpp) |
+|---|---|
+| `pre [options] <infile> <outfile> <genomeID>` | `writeHicFile(outfile, WriteOptions{.genomeId = genomeID, .chromosomes = ...}, source)` |
+| `<infile>` contacts, "short with score" | a `PixelSource`: pixels of one chromosome pair at `sourceResolution`, each counting as one contact at the start of its bins |
+| the chromosome sizes file `<genomeID>` | `WriteOptions::chromosomes`, in file order; "All" is added in front |
+| (version) 1.22.01 writes 8, 2.20.00 writes 9 | `WriteOptions::version` |
+| `-r <resolutions>` | `WriteOptions::resolutions` (base pair) |
+| `-k <normalizations>` | `WriteOptions::normalizations` (VC, VC_SQRT, KR, SCALE) |
+| `-n` | `WriteOptions::normalizations = {}` |
+| `-j <threads>` | `WriteOptions::threads` (block compression; no effect on the output) |
+| `addNorm <file>` with `-k` | `addNorm(file, normalizations, threads)` |
+
+Not available: fragment maps (`-f`), `-d`, `-m`, `-q`, `-c`, `-t`, `-s`, `-g`,
+`-z`, `-a`, position randomization, `--v9-depth-base` (always 2), genome-wide
+and inter-chromosomal normalizations (`-w`, GW_*, INTER_*), and custom
+expected or normalization vector files.
+
+`PixelSource::pixels(resolution, chr1, chr2, consume)` hands the pixels of one
+chromosome pair to `consume` in batches of `Pixel{bin1, bin2, count}`.
+`WriteOptions::sourceProvidesEveryResolution` makes the writer ask the source
+for every resolution instead of binning `sourceResolution`.

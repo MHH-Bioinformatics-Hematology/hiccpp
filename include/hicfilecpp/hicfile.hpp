@@ -19,9 +19,12 @@
 
 namespace hicfilecpp {
 
+class HiCFile;
+
 namespace detail {
 struct FileState;
 struct ZoomState;
+const FileState& stateOf(const HiCFile& file);
 }  // namespace detail
 
 // hicstraw.chromosome
@@ -161,6 +164,7 @@ public:
                                                       const std::string& unit, int32_t resolution) const;
 
 private:
+    friend const detail::FileState& detail::stateOf(const HiCFile& file);
     std::shared_ptr<const detail::FileState> state_;
 };
 

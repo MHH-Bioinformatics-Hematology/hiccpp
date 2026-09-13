@@ -41,6 +41,7 @@ sys.path.insert(0, HERE)
 
 import compare  # noqa: E402
 import hicindex  # noqa: E402
+import write_cases  # noqa: E402
 
 PROCESS_TIMEOUT_S = 3600
 MEASURE = None
@@ -228,7 +229,8 @@ def write_report(records, out_root):
         "# hicfilecpp equivalence report", "",
         f"Date: {time.strftime('%Y-%m-%d')}",
         f"Cases: {len(records)}, pass: {passed}, fail: {failed}", "",
-        "| case | verdict | floats | notes | hicstraw CPU s | C++ CPU s | hicstraw RSS MB | C++ RSS MB |",
+        "Reference: hicstraw 1.3.1 for reading cases, Juicer tools pre for write cases.", "",
+        "| case | verdict | floats | notes | reference CPU s | C++ CPU s | reference RSS MB | C++ RSS MB |",
         "|---|---|---|---|---:|---:|---:|---:|",
     ]
     for r in records:
@@ -271,6 +273,11 @@ def main():
     parser.add_argument("--cases", nargs="*", default=None)
     parser.add_argument("--filter", default=None)
     parser.add_argument("--update-manifest", action="store_true")
+    parser.add_argument("--java", default=None, help="java for the write cases' Juicer tools runs")
+    parser.add_argument("--juicer8", default=None, help="Juicer tools 1.22.01 jar (version 8 reference)")
+    parser.add_argument("--juicer9", default=None, help="Juicer tools 2.20.00 jar (version 9 reference)")
+    parser.add_argument("--java-heap", default="16g")
+    parser.add_argument("--hic2cool-python", default=None, help="python of an environment with hic2cool 1.0.1")
     args = parser.parse_args()
     global MEASURE
     MEASURE = args.measure or os.path.join(os.path.dirname(os.path.abspath(args.driver)), "hicfilecpp-measure")
@@ -313,7 +320,10 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     records = []
     for case in cases:
-        record = run_case(case, args, resolver, args.out)
+        if case["op"] == "write":
+            record = write_cases.run_write_case(case, args, resolver, args.out, run_measured)
+        else:
+            record = run_case(case, args, resolver, args.out)
         records.append(record)
         py, cpp = record.get("py", {}), record.get("cpp", {})
         print(f"{record['verdict']} {record['name']} floats={record.get('float_class')} "

@@ -15,7 +15,8 @@ target_include_directories(hicfilecpp_doctest SYSTEM INTERFACE "${doctest_SOURCE
 
 add_executable(hicfilecpp_tests
     test_main.cpp
-    test_reader.cpp)
+    test_reader.cpp
+    test_writer.cpp)
 target_link_libraries(hicfilecpp_tests PRIVATE hicfilecpp::hicfilecpp hicfilecpp_doctest)
 # Tests read the tracked data files and write into the build tree's scratch
 # directory; both paths are passed in, never derived from the working directory.
