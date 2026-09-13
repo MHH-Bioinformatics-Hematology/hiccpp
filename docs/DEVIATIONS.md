@@ -74,7 +74,11 @@ files through hicstraw [W.*].
    count and both percentiles: Juicer writes the header before the blocks
    that would fill them in. hicstraw's inter-chromosomal "oe" divides by that
    sum.
-2. Normalization vectors hold `length / binSize + 2` entries.
+2. Normalization vectors hold as many entries as the matrix's grid axis has
+   bins, which Juicer takes from the zoom level's block layout: block bin count
+   times block column count. With a single block column that is
+   `length / binSize + 2`. [W.GSM2644945_chr1.*, where chr1 needs three block
+   columns at 100 kb]
 3. VC is the row sum, VC_SQRT its square root, KR the Knight-Ruiz balancing
    with Juicer's row tossing (percentile thresholds of 1, 2, 3, 4 and 10
    percent of the non-zero row sums, at most six attempts, the fifth always

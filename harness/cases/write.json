@@ -24,6 +24,12 @@
   {"name": "W.gm12878_KR.v9", "op": "write", "file": "@hicx/hicCorrectMatrix/gm12878_KR.cool",
    "source_resolution": 2500000, "version": 9, "resolutions": [5000000, 2500000],
    "normalizations": ["VC_SQRT", "KR", "SCALE"], "threads": 8, "dump_pairs": [[0, 0], [1, 2]]},
+  {"name": "W.GSM2644945_chr1.v8", "op": "write", "file": "@hicx/hicDifferentialTAD/GSM2644945_Untreated-R1.100000_chr1.cool",
+   "source_resolution": 100000, "version": 8, "resolutions": [1000000, 500000, 100000],
+   "normalizations": ["VC", "VC_SQRT", "KR", "SCALE"], "threads": 8, "dump_pairs": [[0, 0]]},
+  {"name": "W.GSM2644945_chr1.v9", "op": "write", "file": "@hicx/hicDifferentialTAD/GSM2644945_Untreated-R1.100000_chr1.cool",
+   "source_resolution": 100000, "version": 9, "resolutions": [1000000, 500000, 100000],
+   "normalizations": ["VC", "VC_SQRT", "KR", "SCALE"], "threads": 8, "dump_pairs": [[0, 0]]},
   {"name": "W.SRR.v9.no_norms", "op": "write", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
    "source_resolution": 5000, "version": 9, "resolutions": [100000, 5000],
    "normalizations": [], "threads": 4, "dump_pairs": [[2, 2]]}

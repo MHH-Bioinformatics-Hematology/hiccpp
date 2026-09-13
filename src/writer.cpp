@@ -402,14 +402,18 @@ public:
 
     bool active() const { return !types_.empty(); }
 
-    void addChromosome(int32_t chrIndex, int32_t resolution, const std::vector<NormRecord>& records) {
+    // vectorLength is the bin count of the matrix's grid axis, which Juicer
+    // takes from the zoom level's block layout (MatrixZoomData: blockBinCount
+    // times blockColumnCount), not from the chromosome length.
+    void addChromosome(int32_t chrIndex, int32_t resolution, const std::vector<NormRecord>& records,
+                       int64_t vectorLength) {
         if (records.empty() || types_.empty()) {
             return;
         }
         if (version_ > 8) {
-            compute<float>(chrIndex, resolution, records);
+            compute<float>(chrIndex, resolution, records, vectorLength);
         } else {
-            compute<double>(chrIndex, resolution, records);
+            compute<double>(chrIndex, resolution, records, vectorLength);
         }
     }
 
@@ -493,8 +497,7 @@ private:
     }
 
     template <class T>
-    void compute(int32_t chr, int32_t resolution, const std::vector<NormRecord>& records) {
-        const int64_t size = lengths_[static_cast<size_t>(chr)] / resolution + 2;
+    void compute(int32_t chr, int32_t resolution, const std::vector<NormRecord>& records, int64_t size) {
         const bool vc = wants("VC");
         const bool vcSqrt = wants("VC_SQRT");
         if (vc || vcSqrt) {
@@ -764,7 +767,8 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
                                          keep ? &records : nullptr);
                 zooms.push_back(std::move(zoom));
                 if (keep) {
-                    norms.addChromosome(c1 + 1, resolution, records);
+                    norms.addChromosome(c1 + 1, resolution, records,
+                                        static_cast<int64_t>(layout.blockBinCount) * layout.blockColumnCount);
                 }
             }
             if (!zooms.empty()) {
@@ -858,10 +862,10 @@ void addNorm(const std::string& path, const std::vector<std::string>& normalizat
             for (size_t chr = 1; chr < state.chromosomes.size(); ++chr) {
                 const auto index = static_cast<int32_t>(chr);
                 const auto headers = file.matrixZoomHeaders(index, index);
-                const bool present = std::any_of(headers.begin(), headers.end(), [&](const ZoomHeader& h) {
+                const auto header = std::find_if(headers.begin(), headers.end(), [&](const ZoomHeader& h) {
                     return h.unit == "BP" && h.binSize == resolution;
                 });
-                if (!present) {
+                if (header == headers.end()) {
                     continue;
                 }
                 const auto mzd = file.getMatrixZoomData(state.chromosomes[chr].name, state.chromosomes[chr].name,
@@ -874,7 +878,8 @@ void addNorm(const std::string& path, const std::vector<std::string>& normalizat
                         }
                     },
                     threads);
-                builder->addChromosome(index, resolution, records);
+                builder->addChromosome(index, resolution, records,
+                                       static_cast<int64_t>(header->blockBinCount) * header->blockColumnCount);
             }
         }
     }
