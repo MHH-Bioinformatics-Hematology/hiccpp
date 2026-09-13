@@ -1,0 +1,70 @@
+{
+ "generate": [
+  {"prefix": "SRR", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic"},
+  {"prefix": "J8", "file": "@data/SRR1791297_30.juicer_tools_1.22.01.v8.hic"},
+  {"prefix": "J8F", "file": "@data/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic"},
+  {"prefix": "J9", "file": "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic"}
+ ],
+ "cases": [
+  {"name": "R.SRR.sub.BP.10000.observed", "op": "records", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+   "matrix_type": "observed", "unit": "BP", "resolution": 10000,
+   "queries": [
+    ["NONE", "NC_001133.9", "NC_001133.9", 50000, 150000, 100000, 200000],
+    ["KR", "NC_001133.9", "NC_001133.9", 50000, 150000, 100000, 200000],
+    ["NONE", "NC_001134.8", "NC_001133.9", 100000, 300000, 0, 120000],
+    ["VC", "NC_001134.8", "NC_001133.9", 100000, 300000, 0, 120000],
+    ["VC_SQRT", "NC_001133.9", "NC_001134.8", 0, 120000, 100000, 300000],
+    ["NONE", "NC_001134.8", "NC_001134.8", 400000, 400000, 0, 813184],
+    ["NONE", "NC_001134.8", "NC_001134.8", 700000, 600000, 0, 813184]
+   ]},
+  {"name": "R.SRR.sub.BP.10000.oe", "op": "records", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+   "matrix_type": "oe", "unit": "BP", "resolution": 10000,
+   "queries": [
+    ["NONE", "NC_001133.9", "NC_001133.9", 50000, 150000, 100000, 200000],
+    ["KR", "NC_001134.8", "NC_001134.8", 0, 300000, 500000, 813184],
+    ["NONE", "NC_001134.8", "NC_001133.9", 100000, 300000, 0, 120000],
+    ["VC", "NC_001135.5", "NC_001134.8", 0, 316620, 0, 813184]
+   ]},
+  {"name": "R.SRR.sub.BP.5000.expected", "op": "records", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+   "matrix_type": "expected", "unit": "BP", "resolution": 5000,
+   "queries": [
+    ["NONE", "NC_001133.9", "NC_001133.9", 0, 230218, 0, 230218],
+    ["KR", "NC_001134.8", "NC_001134.8", 100000, 400000, 100000, 400000],
+    ["NONE", "NC_001133.9", "NC_001134.8", 0, 230218, 0, 813184]
+   ]},
+  {"name": "R.J9.sub.BP.10000.observed", "op": "records", "file": "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic",
+   "matrix_type": "observed", "unit": "BP", "resolution": 10000,
+   "queries": [
+    ["SCALE", "NC_001134.8", "NC_001134.8", 0, 100000, 600000, 800000],
+    ["NONE", "NC_001134.8", "NC_001134.8", 200000, 400000, 250000, 300000],
+    ["NONE", "NC_001134.8", "NC_001134.8", 600000, 800000, 0, 100000],
+    ["VC", "NC_001136.10", "NC_001134.8", 0, 500000, 0, 400000],
+    ["KR", "NC_001136.10", "NC_001136.10", 1000000, 1200000, 1100000, 1531933]
+   ]},
+  {"name": "R.J9.sub.BP.50000.oe", "op": "records", "file": "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic",
+   "matrix_type": "oe", "unit": "BP", "resolution": 50000,
+   "queries": [
+    ["SCALE", "NC_001134.8", "NC_001134.8", 0, 300000, 400000, 813184],
+    ["GW_SCALE", "NC_001136.10", "NC_001136.10", 0, 1531933, 0, 1531933],
+    ["NONE", "NC_001136.10", "NC_001134.8", 0, 500000, 0, 400000]
+   ]},
+  {"name": "M.SRR.matrices", "op": "matrices", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+   "queries": [
+    ["NC_001133.9", "NC_001133.9", "observed", "NONE", "BP", 10000, 50000, 150000, 100000, 200000],
+    ["NC_001133.9", "NC_001133.9", "observed", "KR", "BP", 25000, 0, 230218, 0, 230218],
+    ["NC_001134.8", "NC_001133.9", "observed", "NONE", "BP", 50000, 0, 813184, 0, 230218],
+    ["NC_001134.8", "NC_001134.8", "oe", "VC", "BP", 100000, 0, 813184, 200000, 700000],
+    ["NC_001134.8", "NC_001134.8", "observed", "NONE", "BP", 5000, 400000, 400000, 900000, 900000]
+   ]},
+  {"name": "M.J9.matrices", "op": "matrices", "file": "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic",
+   "queries": [
+    ["NC_001136.10", "NC_001136.10", "observed", "SCALE", "BP", 50000, 0, 1531933, 0, 1531933],
+    ["NC_001136.10", "NC_001134.8", "oe", "NONE", "BP", 250000, 0, 1531933, 0, 813184]
+   ]},
+  {"name": "M.J8F.matrices", "op": "matrices", "file": "@data/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic",
+   "queries": [
+    ["NC_001133.9", "NC_001133.9", "observed", "KR", "FRAG", 20, 0, 2000, 0, 2000],
+    ["NC_001134.8", "NC_001133.9", "observed", "NONE", "FRAG", 100, 0, 500, 0, 200]
+   ]}
+ ]
+}

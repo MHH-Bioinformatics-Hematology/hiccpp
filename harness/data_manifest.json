@@ -1,0 +1,18 @@
+{
+ "@data/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic": {
+  "sha256": "b8b068a381762d7b345f39949de77f1f303f06dfcf1e60ed72c1ae0e4b31abc9",
+  "size": 601003
+ },
+ "@data/SRR1791297_30.juicer_tools_1.22.01.v8.hic": {
+  "sha256": "9f22714b62d147a7849a42594573aa0960d32f2196dbb601ba54f8d6271d1860",
+  "size": 1638900
+ },
+ "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic": {
+  "sha256": "2a550ce0deca5e97dfb025f15f5cd6c3aed18579225f4c7c74f0b2a1b8a4a028",
+  "size": 1794416
+ },
+ "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic": {
+  "sha256": "d9d378cbc6175ff51af4ab98636edf05109ae28d33b4175c4823c9dfa7030f66",
+  "size": 5441566
+ }
+}
