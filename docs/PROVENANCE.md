@@ -44,3 +44,47 @@ Both jars target Java 8 (class file version 52).
 
 `sites.txt` places a synthetic restriction site every 2 kb; the fragment maps
 exist only to give the reader FRAG resolutions and FRAG vectors to read.
+
+### Versions 6 and 7
+
+Reading versions 6 and 7 follows the same hicstraw 1.3.1 source, which reads
+versions 6 to 9 and refuses anything below 6 (`readHeader`). Versions 6 and 7
+share version 8's header, footer, zoom metadata, expected values and
+normalization vectors; version 6 blocks are plain records of int32 binX,
+int32 binY and float32 counts (`readBlock`, `version < 7`, as in Juicebox's
+`DatasetReaderV2` and hic2cool's `read_block`).
+
+No Juicer tools release that writes version 6 or 7 could be obtained on
+2026-09-14, so hicfilecpp does not write them:
+
+- Juicebox's `Preprocessor.java` has `VERSION = 8` in every commit of
+  aidenlab/Juicebox, from the file's first commit there (2015-06-08) on, and
+  in the tags 1.9.9, 1.22, v1.5.3 and v1.13.01; the version 7 writer predates
+  that repository.
+- The oldest jars still downloadable from the Aiden lab
+  (`hicfiles.tc4ga.com/public/juicer/`: juicer_tools 1.6.2, 1.7.5 and 1.7.6)
+  write version 8 (checked with `pre` on a small contact list); older names
+  return 403. The GitHub releases start at 2.04.06, and conda offers juicer
+  1.6 (Juicer tools 1.22.01) and juicertools 2.20.00.
+
+The version 6 and 7 test files are therefore cut out of a deposited version 7
+file by `tests/data/extract_legacy_subset.py`:
+
+| File | Source | Command |
+|---|---|---|
+| `GM12878_combined_30.chr21_chr22.v7.hic` | `GSE63525_GM12878_insitu_primary+replicate_combined_30.hic` (GEO GSE63525, 39,901,821,731 bytes, version 7) | `extract_legacy_subset.py SOURCE tests/data` (chromosomes 21 and 22, 2.5 Mb, 1 Mb, 500 kb and 250 kb) |
+| `GM12878_combined_30.chr21_chr22.v6.hic` | the same | the same run |
+
+The version 7 file keeps the source's genome, attributes, zoom metadata,
+compressed blocks, expected values and normalization vectors byte for byte
+and rewrites only positions, sizes and chromosome indices (All, 21 and 22
+become 0, 1 and 2; fragment resolutions are dropped). The version 6 file is
+the same with every block re-encoded in the version 6 record layout and
+deflated with zlib's default level; no real version 6 deposit was at hand,
+so version 6 is validated on real pixels in the version 6 block layout
+rather than on a file an old Juicer release wrote. Checked when the files
+were made: hicstraw returns the same records from the source, the version 7
+file and the version 6 file for every pair, resolution, normalization (NONE,
+VC, VC_SQRT, KR, GW_KR, GW_VC, INTER_KR, INTER_VC) and matrix type (192
+queries, 856,380 records), and hic2cool converts both files at 250 kb into
+the same pixels and vectors.
