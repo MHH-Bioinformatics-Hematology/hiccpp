@@ -1,11 +1,14 @@
 # hicfilecpp
 
-A C++20 library that reads and writes the Juicer `.hic` format, versions 8
-and 9, without Python or Java.
+A C++20 library that reads the Juicer `.hic` format, versions 6 to 9, and
+writes versions 8 and 9, without Python or Java.
 
 - Reading reproduces hicstraw 1.3.1: `HiCFile`, `getMatrixZoomData`,
   `getRecords`, `getRecordsAsMatrix`, `getNormVector` and `getExpectedValues`
-  return what hicstraw returns, record for record.
+  return what hicstraw returns, record for record. Versions 6 and 7 are the
+  older deposits (for example GEO GSE63525, Rao et al. 2014).
+- Writing versions 6 and 7 is refused: no Juicer tools release that writes
+  them can be obtained to validate against (docs/PROVENANCE.md).
 - Writing reproduces Juicer tools `pre` and `addNorm`: version 8 files follow
   release 1.22.01, version 9 files release 2.20.00. The pixels, expected
   values and normalization vectors (VC, VC_SQRT, KR, SCALE) are Juicer's; the

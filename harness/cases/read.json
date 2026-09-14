@@ -3,7 +3,9 @@
   {"prefix": "SRR", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic"},
   {"prefix": "J8", "file": "@data/SRR1791297_30.juicer_tools_1.22.01.v8.hic"},
   {"prefix": "J8F", "file": "@data/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic"},
-  {"prefix": "J9", "file": "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic"}
+  {"prefix": "J9", "file": "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic"},
+  {"prefix": "G7", "file": "@data/GM12878_combined_30.chr21_chr22.v7.hic"},
+  {"prefix": "G6", "file": "@data/GM12878_combined_30.chr21_chr22.v6.hic"}
  ],
  "cases": [
   {"name": "R.SRR.sub.BP.10000.observed", "op": "records", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",

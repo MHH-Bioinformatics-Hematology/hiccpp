@@ -97,20 +97,45 @@ TEST_CASE("forEachBlock gives the same blocks in the same order on any number of
     CHECK(one == collect(32));
 }
 
-TEST_CASE("versions other than 8 and 9 are refused") {
+TEST_CASE("versions below 6 and above 9 are refused") {
     std::ifstream in(kV8, std::ios::binary);
     std::vector<char> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    for (const int version : {6, 7, 10}) {
+    for (const int version : {-1, 0, 5, 10, 11}) {
         std::vector<char> copy = bytes;
         std::copy_n(reinterpret_cast<const char*>(&version), 4, copy.begin() + 4);
         const std::string path = scratch("version" + std::to_string(version) + ".hic");
         std::ofstream(path, std::ios::binary).write(copy.data(), static_cast<std::streamsize>(copy.size()));
         CHECK_THROWS_WITH_AS(hicfilecpp::HiCFile{path},
                              ("Version " + std::to_string(version) +
-                              " is not supported: hicfilecpp reads .hic versions 8 and 9")
+                              " is not supported: hicfilecpp reads .hic versions 6 to 9")
                                  .c_str(),
                              hicfilecpp::HicError);
     }
+}
+
+TEST_CASE("a version 8 file relabelled as version 7 reads the same records") {
+    // Versions 7 and 8 share every layout hicstraw reads, so only the header
+    // version differs. (Version 6 changes the block records, which the harness
+    // checks on tests/data/GM12878_combined_30.chr21_chr22.v6.hic.)
+    std::ifstream in(kV8, std::ios::binary);
+    std::vector<char> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    const int version = 7;
+    std::copy_n(reinterpret_cast<const char*>(&version), 4, bytes.begin() + 4);
+    const std::string path = scratch("relabelled_v7.hic");
+    std::ofstream(path, std::ios::binary).write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    const hicfilecpp::HiCFile v7(path);
+    const hicfilecpp::HiCFile v8(kV8);
+    CHECK(v7.version() == 7);
+    const auto records = [](const hicfilecpp::HiCFile& file) {
+        const auto mzd = file.getMatrixZoomData("NC_001133.9", "NC_001133.9", "observed", "KR", "BP", 10000);
+        std::vector<std::tuple<int32_t, int32_t, float>> out;
+        for (const auto& r : mzd.getRecords(0, 230218, 0, 230218)) {
+            out.emplace_back(r.binX, r.binY, r.counts);
+        }
+        return out;
+    };
+    CHECK(!records(v8).empty());
+    CHECK(records(v7) == records(v8));
 }
 
 TEST_CASE("invalid files, chromosomes, zoom levels and vectors raise HicError") {

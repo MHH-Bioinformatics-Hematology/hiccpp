@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_RPATH_USE_LINK_PATH TRUE)
 
 if(CONSUME STREQUAL "find_package")
-    find_package(hicfilecpp 0.2 REQUIRED)
+    find_package(hicfilecpp 0.3 REQUIRED)
 elseif(CONSUME STREQUAL "FetchContent")
     include(FetchContent)
     FetchContent_Declare(hicfilecpp SOURCE_DIR "${HICFILECPP_SOURCE}")

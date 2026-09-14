@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(hicfilecpp
-    VERSION 0.2.0
+    VERSION 0.3.0
     DESCRIPTION "C++ reader and writer of the Juicer .hic format, API-compatible with hicstraw"
     LANGUAGES CXX)
 

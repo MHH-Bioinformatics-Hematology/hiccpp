@@ -42,7 +42,9 @@ public:
 };
 
 struct WriteOptions {
-    // 8 or 9.
+    // 8 or 9. Versions 6 and 7 are refused with their own message: no Juicer
+    // tools release that writes them can be obtained to validate against
+    // (docs/PROVENANCE.md).
     int32_t version = 9;
     std::string genomeId;
     // Name and length in base pairs, in file order. The whole-genome

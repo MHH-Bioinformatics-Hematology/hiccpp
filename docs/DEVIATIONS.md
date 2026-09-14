@@ -42,9 +42,10 @@ is exercised by the harness cases named in brackets.
 
 ## Reading: deliberate deviations
 
-1. Versions other than 8 and 9 raise `HicError("Version N is not supported:
-   hicfilecpp reads .hic versions 8 and 9")`. hicstraw also reads versions 6
-   and 7. (Unit test "versions other than 8 and 9 are refused".)
+1. Versions below 6 and above 9 raise `HicError("Version N is not supported:
+   hicfilecpp reads .hic versions 6 to 9")`. hicstraw refuses versions below
+   6 with a message and reads a version above 9 as if it were 9. (Unit test
+   "versions below 6 and above 9 are refused".)
 2. An unknown chromosome name raises `HicError("NAME not found in the
    file.")`. hicstraw silently reads the default chromosome, index 0 with
    length 0.

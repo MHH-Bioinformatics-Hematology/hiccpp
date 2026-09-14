@@ -553,6 +553,11 @@ private:
 };
 
 void validate(const WriteOptions& options) {
+    if (options.version == 6 || options.version == 7) {
+        throw HicError("writing .hic version " + std::to_string(options.version) +
+                       " is not supported: no Juicer tools release that writes it can be obtained to "
+                       "validate against; hicfilecpp reads versions 6 to 9 and writes 8 and 9");
+    }
     if (options.version != 8 && options.version != 9) {
         throw HicError("version must be 8 or 9, got " + std::to_string(options.version));
     }

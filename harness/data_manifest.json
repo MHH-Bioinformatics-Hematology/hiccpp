@@ -1,4 +1,12 @@
 {
+ "@data/GM12878_combined_30.chr21_chr22.v6.hic": {
+  "sha256": "7fd9ed56e2c6454c51705aad6ada6251d5564ce2a8046c3c0a5f6161e62e271a",
+  "size": 389897
+ },
+ "@data/GM12878_combined_30.chr21_chr22.v7.hic": {
+  "sha256": "61ed275040fa656e96a6855c0df577f66ff8d7615668b384ca8efaa3a936cb4f",
+  "size": 325154
+ },
  "@data/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic": {
   "sha256": "b8b068a381762d7b345f39949de77f1f303f06dfcf1e60ed72c1ae0e4b31abc9",
   "size": 601003

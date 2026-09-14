@@ -51,9 +51,12 @@ FileState::FileState(const std::string& fileName) : path(fileName), file(fileNam
         throw HicError("Hi-C magic string is missing, does not appear to be a hic file");
     }
     version = in.get<int32_t>();
-    if (version < 8 || version > 9) {
+    // hicstraw refuses versions below 6 (readHeader); versions 6 and 7 share
+    // version 8's header, footer, zoom, expected value and vector layout, and
+    // version 6 differs only in its block records (decodeBlock).
+    if (version < 6 || version > 9) {
         throw HicError("Version " + std::to_string(version) +
-                       " is not supported: hicfilecpp reads .hic versions 8 and 9");
+                       " is not supported: hicfilecpp reads .hic versions 6 to 9");
     }
     master = in.get<int64_t>();
     genome = in.cstr();
@@ -242,6 +245,18 @@ void FileState::decodeBlock(const BlockIndexEntry& entry, std::vector<char>& scr
     MemReader in(scratch.data(), scratch.size());
     const int32_t nRecords = in.get<int32_t>();
     out.reserve(out.size() + static_cast<size_t>(std::max(nRecords, 0)));
+    if (version < 7) {
+        // Version 6: nRecords plain records of int32 binX, int32 binY and
+        // float32 counts.
+        in.require(static_cast<size_t>(std::max(nRecords, 0)) * 12);
+        for (int32_t i = 0; i < nRecords; ++i) {
+            const auto binX = in.getUnchecked<int32_t>();
+            const auto binY = in.getUnchecked<int32_t>();
+            const auto counts = in.getUnchecked<float>();
+            appendRecord(out, binX, binY, counts);
+        }
+        return;
+    }
     const int32_t binXOffset = in.get<int32_t>();
     const int32_t binYOffset = in.get<int32_t>();
     const bool useShort = in.get<char>() == 0;  // yes, 0 means short counts

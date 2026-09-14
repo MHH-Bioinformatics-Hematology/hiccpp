@@ -1,7 +1,7 @@
 #ifndef HICFILECPP_HICFILE_HPP
 #define HICFILECPP_HICFILE_HPP
 
-// Reading .hic files, versions 8 and 9. HiCFile and MatrixZoomData reproduce
+// Reading .hic files, versions 6 to 9. HiCFile and MatrixZoomData reproduce
 // hicstraw 1.3.1 (the pybind11 module of aidenlab/straw): the same names, the
 // same arguments and the same values, including hicstraw's float arithmetic.
 // The members below the first block of each class go beyond hicstraw: they

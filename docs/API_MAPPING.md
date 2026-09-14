@@ -42,7 +42,7 @@ any normalization the file holds (`"VC"`, `"VC_SQRT"`, `"KR"`, `"SCALE"`,
 
 | C++ | Returns |
 |---|---|
-| `HiCFile::version()` | 8 or 9 |
+| `HiCFile::version()` | 6 to 9 |
 | `HiCFile::attributes()` | the header's key/value attributes, in file order |
 | `HiCFile::getFragResolutions()` | FRAG resolutions |
 | `HiCFile::fragmentSiteCounts()` | restriction sites per chromosome |

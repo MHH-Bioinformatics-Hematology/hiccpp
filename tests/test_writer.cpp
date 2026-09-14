@@ -109,6 +109,26 @@ double worstRelative(const std::vector<double>& a, const std::vector<double>& b)
 
 }  // namespace
 
+TEST_CASE("writing versions 6 and 7 is refused with the reason, other versions as before") {
+    HicSource source(kJ8, 10000);
+    for (const int32_t version : {6, 7}) {
+        const std::string path = scratch("refused.v" + std::to_string(version) + ".hic");
+        CHECK_THROWS_WITH_AS(hicfilecpp::writeHicFile(path, optionsFor(source, version), source),
+                             ("writing .hic version " + std::to_string(version) +
+                              " is not supported: no Juicer tools release that writes it can be "
+                              "obtained to validate against; hicfilecpp reads versions 6 to 9 and "
+                              "writes 8 and 9")
+                                 .c_str(),
+                             hicfilecpp::HicError);
+    }
+    for (const int32_t version : {5, 10}) {
+        const std::string path = scratch("refused.v" + std::to_string(version) + ".hic");
+        CHECK_THROWS_WITH_AS(hicfilecpp::writeHicFile(path, optionsFor(source, version), source),
+                             ("version must be 8 or 9, got " + std::to_string(version)).c_str(),
+                             hicfilecpp::HicError);
+    }
+}
+
 TEST_CASE("written files return the source pixels and Juicer's coarser pixels") {
     for (const int32_t version : {8, 9}) {
         HicSource source(kJ8, 10000);
