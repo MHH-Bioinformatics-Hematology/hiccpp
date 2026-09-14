@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 3.21)
 
-foreach(var SOURCE_DIR WORK_DIR GENERATOR)
+foreach(var SOURCE_DIR WORK_DIR GENERATOR EXPECTED_VERSION)
     if(NOT DEFINED ${var})
         message(FATAL_ERROR "${var} is required")
     endif()
@@ -37,7 +37,8 @@ run(${CMAKE_COMMAND} --install "${WORK_DIR}/lib-build")
 
 set(ENV{CMAKE_PREFIX_PATH} "${WORK_DIR}/prefix:${prefix_env}")
 run(${CMAKE_COMMAND} -S "${SOURCE_DIR}/tests/consumer" -B "${WORK_DIR}/find-build"
-    -G "${GENERATOR}" -DCMAKE_BUILD_TYPE=Release -DCONSUME=find_package)
+    -G "${GENERATOR}" -DCMAKE_BUILD_TYPE=Release -DCONSUME=find_package
+    "-DEXPECTED_VERSION=${EXPECTED_VERSION}")
 run(${CMAKE_COMMAND} --build "${WORK_DIR}/find-build" --parallel 8)
 run("${WORK_DIR}/find-build/consumer" "${data}")
 

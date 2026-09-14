@@ -34,5 +34,6 @@ add_test(NAME hicfilecpp_consumer
         -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/consumer
         -DPREFIX_PATH=${CMAKE_PREFIX_PATH}
         -DGENERATOR=${CMAKE_GENERATOR}
+        -DEXPECTED_VERSION=${hicfilecpp_VERSION_MAJOR}.${hicfilecpp_VERSION_MINOR}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/consumer/run_consumer.cmake)
 set_tests_properties(hicfilecpp_consumer PROPERTIES TIMEOUT 900)
