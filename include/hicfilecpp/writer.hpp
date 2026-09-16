@@ -62,6 +62,19 @@ struct WriteOptions {
     bool sourceProvidesEveryResolution = false;
     // Computed as Juicer tools addNorm does; any of VC, VC_SQRT, KR, SCALE.
     std::vector<std::string> normalizations{"VC", "VC_SQRT", "KR", "SCALE"};
+    // Normalization vectors the caller supplies instead of having them
+    // computed, such as the vectors of another .hic file kept in a cool file.
+    // A name is any normalization type label (KR, GW_KR, a custom one) that
+    // `normalizations` does not also list. For every chromosome with
+    // intra-chromosomal pixels at a resolution, `normVector` is asked for the
+    // vector of each name, chrIndex being the 0-based index into
+    // `chromosomes`; an empty vector writes none for that chromosome. The
+    // values are stored as given, without Juicer's scaling to the matrix sum,
+    // and the normalized expected values are computed from them. A vector
+    // shorter than the matrix grid is padded as Juicer pads its own: with 0
+    // for VC types, NaN otherwise; a longer one is cut.
+    std::vector<std::string> providedNormalizations;
+    std::function<std::vector<double>(const std::string& name, int32_t chrIndex, int32_t resolution)> normVector;
     // Header attributes written after "software", in order.
     std::vector<std::pair<std::string, std::string>> attributes;
     // The "software" attribute; empty means "hicfilecpp <version>".

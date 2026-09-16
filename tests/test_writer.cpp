@@ -239,3 +239,76 @@ TEST_CASE("invalid writer input raises HicError") {
     CHECK_THROWS_AS(hicfilecpp::addNorm(kData + "/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic", {"VC"}),
                     hicfilecpp::HicError);
 }
+
+TEST_CASE("provided normalization vectors are stored as given with their expected values") {
+    for (const auto& [version, reference] : {std::pair{8, kJ8}, std::pair{9, kJ9}}) {
+        HicSource source(kJ8, 10000);
+        auto options = optionsFor(source, version);
+        const hicfilecpp::HiCFile juicer(reference);
+        options.normalizations = {"VC"};
+        options.providedNormalizations = {"KR", "GW_KR"};
+        int32_t asked = 0;
+        options.normVector = [&](const std::string& name, int32_t chrIndex, int32_t resolution) {
+            ++asked;
+            // GW_KR is a label Juicer tools also uses; its values are KR's.
+            auto vector = juicer.readNormVector(name == "GW_KR" ? "KR" : name, chrIndex + 1, "BP", resolution);
+            REQUIRE(vector.has_value());
+            if (chrIndex == 3 && name == "GW_KR") {
+                return std::vector<double>{};  // no vector for this chromosome
+            }
+            vector->resize(vector->size() - 1);  // the padding is restored
+            return *vector;
+        };
+        const std::string path = scratch("provided.v" + std::to_string(version) + ".hic");
+        hicfilecpp::writeHicFile(path, options, source);
+        CHECK(asked == 2 * 2 * 16);
+        const hicfilecpp::HiCFile written(path);
+        CHECK(written.hasNormalizedExpectedSection());
+        for (const int32_t resolution : {10000, 50000}) {
+            for (int32_t chr = 1; chr <= 16; ++chr) {
+                const auto theirs = juicer.readNormVector("KR", chr, "BP", resolution);
+                const auto kr = written.readNormVector("KR", chr, "BP", resolution);
+                REQUIRE(kr.has_value());
+                REQUIRE(kr->size() == theirs->size());
+                for (size_t i = 0; i < kr->size(); ++i) {
+                    CHECK((std::isnan((*kr)[i]) ? std::isnan((*theirs)[i]) : (*kr)[i] == (*theirs)[i]));
+                }
+                CHECK(written.readNormVector("GW_KR", chr, "BP", resolution).has_value() == (chr != 4));
+                CHECK(written.readNormVector("VC", chr, "BP", resolution).has_value());
+            }
+            const auto mine = written.readExpectedValues({"KR", "BP", resolution});
+            const auto theirs = juicer.readExpectedValues({"KR", "BP", resolution});
+            REQUIRE(mine.has_value());
+            CHECK(worstRelative(mine->values, theirs->values) <= 1e-3);
+            CHECK(written.readExpectedValues({"GW_KR", "BP", resolution}).has_value());
+        }
+        const auto types = written.getNormalizationTypes();
+        CHECK(std::find(types.begin(), types.end(), "GW_KR") != types.end());
+
+        auto bad = options;
+        bad.providedNormalizations = {"VC"};
+        CHECK_THROWS_AS(hicfilecpp::writeHicFile(scratch("bad.hic"), bad, source), hicfilecpp::HicError);
+        bad = options;
+        bad.normVector = nullptr;
+        CHECK_THROWS_AS(hicfilecpp::writeHicFile(scratch("bad.hic"), bad, source), hicfilecpp::HicError);
+        bad = options;
+        bad.providedNormalizations = {"K R"};
+        CHECK_THROWS_AS(hicfilecpp::writeHicFile(scratch("bad.hic"), bad, source), hicfilecpp::HicError);
+    }
+}
+
+TEST_CASE("a footer without a normalized expected-value section is reported") {
+    HicSource source(kJ8, 10000);
+    auto options = optionsFor(source, 8);
+    options.normalizations.clear();
+    const std::string path = scratch("no_norm_section.hic");
+    hicfilecpp::writeHicFile(path, options, source);
+    CHECK(hicfilecpp::HiCFile(path).hasNormalizedExpectedSection());
+    // Version 8 without normalizations ends with two zero counts: the
+    // normalized expected values and the vector index.
+    std::filesystem::resize_file(path, std::filesystem::file_size(path) - 8);
+    const hicfilecpp::HiCFile truncated(path);
+    CHECK_FALSE(truncated.hasNormalizedExpectedSection());
+    CHECK(truncated.getNormalizationTypes().empty());
+    CHECK(hicfilecpp::HiCFile(kJ9).hasNormalizedExpectedSection());
+}

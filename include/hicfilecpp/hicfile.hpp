@@ -154,6 +154,9 @@ public:
     std::vector<int32_t> fragmentSiteCounts() const;
     bool hasMatrix(int32_t chr1Index, int32_t chr2Index) const;
     std::vector<ZoomHeader> matrixZoomHeaders(int32_t chr1Index, int32_t chr2Index) const;
+    // False when the footer ends after the raw expected values, with no
+    // section for normalized ones (hic2cool warns about such files).
+    bool hasNormalizedExpectedSection() const;
     // Every expected-value entry, raw section first, in file order.
     std::vector<ExpectedValuesKey> expectedValuesKeys() const;
     std::optional<ExpectedValues> readExpectedValues(const ExpectedValuesKey& key) const;

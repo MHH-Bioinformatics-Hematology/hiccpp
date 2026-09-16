@@ -36,7 +36,10 @@ hicfilecpp::addNorm("other.hic", {"VC", "KR", "SCALE"});
 Beyond hicstraw, `HiCFile` exposes the version, the attributes, FRAG
 resolutions, the expected-value and normalization vector indexes, and
 `MatrixZoomData::forEachBlock` decodes a matrix block by block on several
-threads for bulk reading.
+threads for bulk reading. Beyond Juicer tools, the writer also stores
+normalization vectors the caller supplies (`WriteOptions::providedNormalizations`
+and `normVector`), such as vectors kept in a cool file, under any type label,
+with the normalized expected values computed from them.
 
 `docs/API_MAPPING.md` maps every hicstraw call and every Juicer tools option
 to its C++ form; `docs/DEVIATIONS.md` lists the reproduced behaviour and the
@@ -58,7 +61,7 @@ cmake --install build --prefix /opt/hicfilecpp
 Downstream projects use either
 
 ```cmake
-find_package(hicfilecpp 0.2 REQUIRED)
+find_package(hicfilecpp 0.4 REQUIRED)
 target_link_libraries(app PRIVATE hicfilecpp::hicfilecpp)
 ```
 

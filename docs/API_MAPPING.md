@@ -50,6 +50,7 @@ any normalization the file holds (`"VC"`, `"VC_SQRT"`, `"KR"`, `"SCALE"`,
 | `HiCFile::hasMatrix(c1, c2)`, `matrixZoomHeaders(c1, c2)` | the matrices and their zoom headers |
 | `HiCFile::expectedValuesKeys()`, `readExpectedValues(key)` | expected-value entries with their per-chromosome factors |
 | `HiCFile::normVectorIndex()`, `getNormalizationTypes()`, `readNormVector(norm, chr, unit, resolution)` | normalization vectors |
+| `HiCFile::hasNormalizedExpectedSection()` | false when the footer ends after the raw expected values |
 | `MatrixZoomData::found()`, `message()` | whether the query found its data |
 | `MatrixZoomData::zoomHeader()`, `blockIndex()`, `readBlock(entry)` | the zoom header and blocks, records in bins |
 | `MatrixZoomData::forEachBlock(visit, threads)` | every block in ascending number, decoded on several threads |
@@ -69,11 +70,13 @@ Errors are `hicfilecpp::HicError`, derived from `std::runtime_error`.
 | `-n` | `WriteOptions::normalizations = {}` |
 | `-j <threads>` | `WriteOptions::threads` (block compression; no effect on the output) |
 | `addNorm <file>` with `-k` | `addNorm(file, normalizations, threads)` |
+| `addNorm <file> <vector file>` (custom vectors) | `WriteOptions::providedNormalizations` and `normVector` at write time: vectors stored as given, under any label |
 
 Not available: fragment maps (`-f`), `-d`, `-m`, `-q`, `-c`, `-t`, `-s`, `-g`,
 `-z`, `-a`, position randomization, `--v9-depth-base` (always 2), genome-wide
-and inter-chromosomal normalizations (`-w`, GW_*, INTER_*), and custom
-expected or normalization vector files.
+and inter-chromosomal normalizations (`-w`, GW_*, INTER_*) computed by the
+library (provided vectors may carry these labels), and custom expected value
+files.
 
 `PixelSource::pixels(resolution, chr1, chr2, consume)` hands the pixels of one
 chromosome pair to `consume` in batches of `Pixel{bin1, bin2, count}`.

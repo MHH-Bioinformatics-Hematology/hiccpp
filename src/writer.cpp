@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <functional>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -391,29 +392,43 @@ void validateNormalizations(const std::vector<std::string>& normalizations) {
 class NormBuilder {
 public:
     NormBuilder(int32_t version, std::vector<int64_t> lengths, std::vector<int32_t> resolutions,
-                const std::vector<std::string>& requested)
-        : version_(version), lengths_(std::move(lengths)), resolutions_(std::move(resolutions)) {
+                const std::vector<std::string>& requested, std::vector<std::string> provided = {},
+                std::function<std::vector<double>(const std::string&, int32_t, int32_t)> provider = {})
+        : version_(version),
+          lengths_(std::move(lengths)),
+          resolutions_(std::move(resolutions)),
+          names_(kNormOrder),
+          provided_(std::move(provided)),
+          provider_(std::move(provider)) {
         for (const auto& type : kNormOrder) {
             if (std::find(requested.begin(), requested.end(), type) != requested.end()) {
                 types_.push_back(type);
             }
         }
+        // Provided types are indexed after the computed ones, in the order given.
+        for (const auto& name : provided_) {
+            if (std::find(names_.begin(), names_.end(), name) == names_.end()) {
+                names_.push_back(name);
+            }
+        }
     }
 
-    bool active() const { return !types_.empty(); }
+    bool active() const { return !types_.empty() || !provided_.empty(); }
 
     // vectorLength is the bin count of the matrix's grid axis, which Juicer
     // takes from the zoom level's block layout (MatrixZoomData: blockBinCount
     // times blockColumnCount), not from the chromosome length.
     void addChromosome(int32_t chrIndex, int32_t resolution, const std::vector<NormRecord>& records,
                        int64_t vectorLength) {
-        if (records.empty() || types_.empty()) {
+        if (records.empty() || !active()) {
             return;
         }
         if (version_ > 8) {
             compute<float>(chrIndex, resolution, records, vectorLength);
+            provide<float>(chrIndex, resolution, records, vectorLength);
         } else {
             compute<double>(chrIndex, resolution, records, vectorLength);
+            provide<double>(chrIndex, resolution, records, vectorLength);
         }
     }
 
@@ -438,7 +453,7 @@ public:
         const int64_t indexPosition = out.position();
         int64_t indexSize = 4;
         for (const auto& v : vectors_) {
-            indexSize += static_cast<int64_t>(kNormOrder[static_cast<size_t>(v.typeOrder)].size()) + 1 + 4 + 3 + 4 +
+            indexSize += static_cast<int64_t>(names_[static_cast<size_t>(v.typeOrder)].size()) + 1 + 4 + 3 + 4 +
                          8 + (version_ > 8 ? 8 : 4);
         }
         ByteWriter index;
@@ -447,7 +462,7 @@ public:
         for (const auto& v : vectors_) {
             const auto n = static_cast<int64_t>(v.values.size());
             const int64_t size = version_ > 8 ? 8 + 4 * n : 4 + 8 * n;
-            index.cstr(kNormOrder[static_cast<size_t>(v.typeOrder)]);
+            index.cstr(names_[static_cast<size_t>(v.typeOrder)]);
             index.put<int32_t>(v.chr);
             index.cstr("BP");
             index.put<int32_t>(v.resolution);
@@ -481,8 +496,8 @@ private:
         return static_cast<int32_t>(std::find(resolutions_.begin(), resolutions_.end(), resolution) -
                                     resolutions_.begin());
     }
-    static int32_t typeOrder(const std::string& type) {
-        return static_cast<int32_t>(std::find(kNormOrder.begin(), kNormOrder.end(), type) - kNormOrder.begin());
+    int32_t typeOrder(const std::string& type) const {
+        return static_cast<int32_t>(std::find(names_.begin(), names_.end(), type) - names_.begin());
     }
     bool wants(const std::string& type) const {
         return std::find(types_.begin(), types_.end(), type) != types_.end();
@@ -526,6 +541,28 @@ private:
         }
     }
 
+    // The caller's vectors, stored as given (writeHicFile's chromosome indexes
+    // start at 1 for the whole-genome pseudo-chromosome; the caller's at 0).
+    template <class T>
+    void provide(int32_t chr, int32_t resolution, const std::vector<NormRecord>& records, int64_t size) {
+        for (const auto& name : provided_) {
+            const std::vector<double> given = provider_(name, chr - 1, resolution);
+            if (given.empty()) {
+                continue;
+            }
+            const bool vcType = name == "VC" || name == "VC_SQRT" ||
+                                (name.size() > 3 && name.compare(name.size() - 3, 3, "_VC") == 0) ||
+                                (name.size() > 8 && name.compare(name.size() - 8, 8, "_VC_SQRT") == 0);
+            const T pad = vcType ? T(0) : std::numeric_limits<T>::quiet_NaN();
+            std::vector<T> vector(static_cast<size_t>(std::max<int64_t>(size, 0)), pad);
+            const size_t n = std::min(vector.size(), given.size());
+            for (size_t i = 0; i < n; ++i) {
+                vector[i] = static_cast<T>(given[i]);
+            }
+            store<T>(chr, resolution, name, std::move(vector), records);
+        }
+    }
+
     // NormalizationVectorUpdater.updateExpectedValueCalculationForChr
     template <class T>
     void update(int32_t chr, int32_t resolution, const std::string& type, std::vector<T> vector,
@@ -534,6 +571,12 @@ private:
         for (auto& value : vector) {
             value = static_cast<T>(value * factor);
         }
+        store<T>(chr, resolution, type, std::move(vector), records);
+    }
+
+    template <class T>
+    void store(int32_t chr, int32_t resolution, const std::string& type, std::vector<T> vector,
+               const std::vector<NormRecord>& records) {
         addDistancesFromRecords(expected(resolution, type), chr, records, vector);
         StoredVector stored;
         stored.zoomOrder = zoomOrder(resolution);
@@ -548,6 +591,9 @@ private:
     std::vector<int64_t> lengths_;
     std::vector<int32_t> resolutions_;
     std::vector<std::string> types_;
+    std::vector<std::string> names_;
+    std::vector<std::string> provided_;
+    std::function<std::vector<double>(const std::string&, int32_t, int32_t)> provider_;
     std::map<std::pair<int32_t, int32_t>, ExpectedValueCalculation> expected_;
     std::vector<StoredVector> vectors_;
 };
@@ -600,6 +646,23 @@ void validate(const WriteOptions& options) {
         }
     }
     validateNormalizations(options.normalizations);
+    std::set<std::string> provided;
+    for (const auto& name : options.providedNormalizations) {
+        if (name.empty() || name == "NONE" ||
+            std::any_of(name.begin(), name.end(), [](unsigned char c) { return c <= ' ' || c >= 127; })) {
+            throw HicError("invalid provided normalization name '" + name + "'");
+        }
+        if (!provided.insert(name).second) {
+            throw HicError("provided normalization " + name + " is listed twice");
+        }
+        if (std::find(options.normalizations.begin(), options.normalizations.end(), name) !=
+            options.normalizations.end()) {
+            throw HicError("normalization " + name + " is both computed and provided");
+        }
+    }
+    if (!options.providedNormalizations.empty() && !options.normVector) {
+        throw HicError("providedNormalizations needs a normVector function");
+    }
     if (options.threads < 1) {
         throw HicError("threads must be at least 1");
     }
@@ -677,7 +740,8 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
     for (const int32_t resolution : resolutions) {
         expectedNone.emplace_back(lengths, resolution, "NONE");
     }
-    NormBuilder norms(version, lengths, resolutions, options.normalizations);
+    NormBuilder norms(version, lengths, resolutions, options.normalizations, options.providedNormalizations,
+                      options.normVector);
 
     const Layout wholeLayout = wholeGenomeLayout(version, genomeLengthKb);
     const int64_t wholeBins = genomeLengthKb / wholeLayout.binSize + 1;

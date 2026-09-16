@@ -62,6 +62,9 @@ struct FileState {
     // Where the normalized expected values begin: the end of the raw
     // expected-value section, which is where Juicer tools addNorm writes.
     int64_t normalizedSectionPosition = 0;
+    // False when the file ends right after the raw expected values, as files
+    // written by old Juicer releases without normalizations do.
+    bool normalizedSectionPresent = false;
 };
 
 struct ZoomState {

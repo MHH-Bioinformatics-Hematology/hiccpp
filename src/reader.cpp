@@ -142,6 +142,7 @@ FileState::FileState(const std::string& fileName) : path(fileName), file(fileNam
     if (footer.eof()) {
         return;
     }
+    normalizedSectionPresent = true;
     readExpected(true, expectedNormalized);
     if (footer.eof()) {
         return;
@@ -473,6 +474,10 @@ std::vector<ZoomHeader> HiCFile::matrixZoomHeaders(int32_t chr1Index, int32_t ch
         headers.push_back(std::move(header));
     }
     return headers;
+}
+
+bool HiCFile::hasNormalizedExpectedSection() const {
+    return state_->normalizedSectionPresent;
 }
 
 std::vector<ExpectedValuesKey> HiCFile::expectedValuesKeys() const {
