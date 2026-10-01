@@ -43,6 +43,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: install.md
+  - Examples: examples.md
   - Reading .hic files: reading.md
   - Writing .hic files: writing.md
   - API reference: api.md

@@ -18,23 +18,9 @@ auto records = mzd.getRecords(0, 5000000, 0, 5000000);   // binX, binY, counts
 auto dense = mzd.getRecordsAsMatrix(0, 1000000, 0, 1000000);
 ```
 
-The whole of `examples/read_hic.cpp`, which prints that metadata, reads the
-records of one chromosome pair, walks the same matrix block by block and reads a
-normalization vector:
-
-```cpp title="examples/read_hic.cpp"
---8<-- "examples/read_hic.cpp"
-```
-
-```
-$ read_hic GM12878_combined_30.chr21_chr22.v6.hic 250000
-version 6, genome hg19
-resolutions: 2500000 1000000 500000 250000
-2 chromosomes, first 21 of 48129895 bp
-10319 records at 250000 bp, first 9250000 9250000 278
-blocks hold 10319 records, 2.75158e+07 contacts
-GW_KR vector of 193 values
-```
+`read_hic` on [the examples page](examples.md#reading-a-file) is a complete
+program that prints this metadata, reads the records of one chromosome pair,
+walks the same matrix block by block, and reads a normalization vector.
 
 A query that finds nothing reports it rather than throwing, as hicstraw does:
 `found()` is false and `message()` carries the text hicstraw prints.

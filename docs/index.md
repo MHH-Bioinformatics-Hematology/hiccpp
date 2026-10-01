@@ -25,9 +25,8 @@ int main() {
 }
 ```
 
-The programs under [`examples/`](https://github.com/MHH-Bioinformatics-Hematology/hiccpp/tree/main/examples)
-are complete and build with the library: `read_hic` reads a file and
-`write_hic` writes one. The pages that follow show them in full.
+[The examples page](examples.md) carries two complete programs that build with
+the library: `read_hic` reads a file and `write_hic` writes one.
 
 What the library does not do is listed in [the deviations page](DEVIATIONS.md): writing versions 6
 and 7 is refused, since no obtainable Juicer tools release writes them to
