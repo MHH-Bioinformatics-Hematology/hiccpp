@@ -1,5 +1,5 @@
 build/
 __pycache__/
 *.pyc
-docs/_build/
-docs/_doxygen/
+site/
+

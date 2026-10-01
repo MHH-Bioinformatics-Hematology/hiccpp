@@ -1,0 +1,51 @@
+site_name: hiccpp
+site_description: A C++ library reading and writing the Juicer .hic format, with the API of hicstraw
+site_author: Joachim Wolff
+site_url: https://hiccpp.readthedocs.io/
+repo_url: https://github.com/MHH-Bioinformatics-Hematology/hiccpp
+repo_name: MHH-Bioinformatics-Hematology/hiccpp
+edit_uri: edit/main/docs/
+copyright: MIT License
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.integrate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.snippets:
+      base_path: ['.']
+      check_paths: true
+
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - Reading .hic files: reading.md
+  - Writing .hic files: writing.md
+  - API reference: api.md
+  - hicstraw and Juicer tools mapping: API_MAPPING.md
+  - Deviations: DEVIATIONS.md
+  - Provenance: PROVENANCE.md

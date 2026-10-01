@@ -18,25 +18,6 @@ auto mzd = hic.getMatrixZoomData("chr1", "chr1", "observed", "KR", "BP", 10000);
 auto records = mzd.getRecords(0, 5000000, 0, 5000000);
 ```
 
-What the library does not do is listed in [](DEVIATIONS.md): writing versions 6
+What the library does not do is listed in [the deviations page](DEVIATIONS.md): writing versions 6
 and 7 is refused, since no obtainable Juicer tools release writes them to
 validate against.
-
-```{toctree}
-:maxdepth: 2
-:caption: Guide
-
-install
-reading
-writing
-```
-
-```{toctree}
-:maxdepth: 2
-:caption: Reference
-
-api
-API_MAPPING
-DEVIATIONS
-PROVENANCE
-```

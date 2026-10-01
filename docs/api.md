@@ -1,77 +1,27 @@
 # API reference
 
-## Reading
+The public headers, which carry the comments that name the hicstraw call or the
+Juicer tools method each part follows. The guide pages explain how they fit
+together.
 
-```{eval-rst}
-.. doxygenclass:: hiccpp::HiCFile
-   :members:
-   :undoc-members:
+## hiccpp/hicfile.hpp
 
-.. doxygenclass:: hiccpp::MatrixZoomData
-   :members:
-   :undoc-members:
+Reading: `HiCFile`, `MatrixZoomData` and the records and metadata they return.
+
+```cpp
+--8<-- "include/hiccpp/hicfile.hpp"
 ```
 
-## Writing
+## hiccpp/writer.hpp
 
-```{eval-rst}
-.. doxygenfunction:: hiccpp::writeHicFile
+Writing: `WriteOptions`, `PixelSource`, `writeHicFile` and `addNorm`.
 
-.. doxygenfunction:: hiccpp::addNorm
-
-.. doxygenstruct:: hiccpp::WriteOptions
-   :members:
-   :undoc-members:
-
-.. doxygenclass:: hiccpp::PixelSource
-   :members:
-   :undoc-members:
+```cpp
+--8<-- "include/hiccpp/writer.hpp"
 ```
 
-## Records and metadata
+## hiccpp/errors.hpp
 
-```{eval-rst}
-.. doxygenstruct:: hiccpp::Chromosome
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::ContactRecord
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::Pixel
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::FloatMatrix
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::ZoomHeader
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::BlockIndexEntry
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::ExpectedValuesKey
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::ExpectedValues
-   :members:
-   :undoc-members:
-
-.. doxygenstruct:: hiccpp::NormVectorIndexEntry
-   :members:
-   :undoc-members:
-```
-
-## Errors
-
-```{eval-rst}
-.. doxygenclass:: hiccpp::HicError
-   :members:
-   :undoc-members:
+```cpp
+--8<-- "include/hiccpp/errors.hpp"
 ```
