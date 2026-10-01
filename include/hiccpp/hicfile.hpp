@@ -1,5 +1,5 @@
-#ifndef HICFILECPP_HICFILE_HPP
-#define HICFILECPP_HICFILE_HPP
+#ifndef HICCPP_HICFILE_HPP
+#define HICCPP_HICFILE_HPP
 
 // Reading .hic files, versions 6 to 9. HiCFile and MatrixZoomData reproduce
 // hicstraw 1.3.1 (the pybind11 module of aidenlab/straw): the same names, the
@@ -15,9 +15,9 @@
 #include <utility>
 #include <vector>
 
-#include "hicfilecpp/errors.hpp"
+#include "hiccpp/errors.hpp"
 
-namespace hicfilecpp {
+namespace hiccpp {
 
 class HiCFile;
 
@@ -176,6 +176,6 @@ private:
     std::shared_ptr<const detail::FileState> state_;
 };
 
-}  // namespace hicfilecpp
+}  // namespace hiccpp
 
-#endif  // HICFILECPP_HICFILE_HPP
+#endif  // HICCPP_HICFILE_HPP

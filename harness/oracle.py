@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-"""The hicstraw side of the hicfilecpp harness: runs one case through
-hicstraw 1.3.1 and writes the result in the layout of hicfilecpp-harness.
+"""The hicstraw side of the hiccpp harness: runs one case through
+hicstraw 1.3.1 and writes the result in the layout of hiccpp-harness.
 
     python harness/oracle.py run CASE.json OUT_DIR
 

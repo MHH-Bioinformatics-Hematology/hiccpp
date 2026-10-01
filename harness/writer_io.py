@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Inputs and read-back checks of the hicfilecpp writer cases. Runs in the
+"""Inputs and read-back checks of the hiccpp writer cases. Runs in the
 oracle environment (hicstraw, h5py, numpy).
 
     python harness/writer_io.py prep SOURCE SOURCE_RESOLUTION OUT_DIR
@@ -15,7 +15,7 @@ with h5py) into the same contacts for both writers:
                 Juicer tools pre input, one "short with score" line per pixel
                 at the start of its bins
 
-check reads a hicfilecpp-written file and the Juicer-written file of the same
+check reads a hiccpp-written file and the Juicer-written file of the same
 contacts back through hicstraw and compares, at every resolution and for every
 chromosome pair, the observed records with each other and, at the source
 resolution, with the source pixels; for every normalization and chromosome,

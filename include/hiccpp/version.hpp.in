@@ -1,7 +1,7 @@
-#ifndef HICFILECPP_VERSION_HPP
-#define HICFILECPP_VERSION_HPP
+#ifndef HICCPP_VERSION_HPP
+#define HICCPP_VERSION_HPP
 
-namespace hicfilecpp {
+namespace hiccpp {
 
 inline constexpr const char* kVersion = "@PROJECT_VERSION@";
 // The hicstraw release whose reading API this library reproduces.
@@ -10,6 +10,6 @@ inline constexpr const char* kHicstrawVersion = "1.3.1";
 inline constexpr int kMinVersion = 6;
 inline constexpr int kMaxVersion = 9;
 
-}  // namespace hicfilecpp
+}  // namespace hiccpp
 
-#endif  // HICFILECPP_VERSION_HPP
+#endif  // HICCPP_VERSION_HPP

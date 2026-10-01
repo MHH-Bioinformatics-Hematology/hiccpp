@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""Runs the hicfilecpp equivalence harness: every case through hicstraw
-(oracle.py, in its own environment) and through hicfilecpp (the
-hicfilecpp-harness driver), compares the outputs, measures peak RSS and CPU
+"""Runs the hiccpp equivalence harness: every case through hicstraw
+(oracle.py, in its own environment) and through hiccpp (the
+hiccpp-harness driver), compares the outputs, measures peak RSS and CPU
 time of both processes, applies the gates and writes a report.
 
-    python harness/run.py --driver BUILD/harness/hicfilecpp-harness \\
+    python harness/run.py --driver BUILD/harness/hiccpp-harness \\
         --oracle-python ENV/bin/python \\
         --hicx-data ~/src/HiCExplorer-v4/hicexplorer/test/test_data \\
         --out REPORT_DIR [--filter REGEX] [--cases FILE ...]
@@ -19,7 +19,7 @@ case, one records case per unit, resolution and matrix type covering every
 chromosome pair and every normalization the file holds, one vectors case per
 unit and resolution, and a records case for the whole-genome matrix.
 
-Gates: hicfilecpp may not use more CPU time than hicstraw, and its peak RSS
+Gates: hiccpp may not use more CPU time than hicstraw, and its peak RSS
 must stay within hicstraw's.
 """
 
@@ -214,10 +214,10 @@ def run_case(case, args, resolver, out_root):
     record["rss_gate"] = record["cpp"]["rss_mb"] <= record["py"]["rss_mb"]
     if not record["cpu_gate"]:
         record["problems"].append(
-            f"CPU gate: hicfilecpp {record['cpp']['cpu_s']:.3f} s > hicstraw {record['py']['cpu_s']:.3f} s")
+            f"CPU gate: hiccpp {record['cpp']['cpu_s']:.3f} s > hicstraw {record['py']['cpu_s']:.3f} s")
     if not record["rss_gate"]:
         record["problems"].append(
-            f"RSS gate: hicfilecpp {record['cpp']['rss_mb']:.1f} MB > hicstraw {record['py']['rss_mb']:.1f} MB")
+            f"RSS gate: hiccpp {record['cpp']['rss_mb']:.1f} MB > hicstraw {record['py']['rss_mb']:.1f} MB")
     record["verdict"] = "PASS" if not record["problems"] else "FAIL"
     return record
 
@@ -226,7 +226,7 @@ def write_report(records, out_root):
     passed = sum(1 for r in records if r["verdict"].lower() == "pass")
     failed = sum(1 for r in records if r["verdict"].lower() == "fail")
     lines = [
-        "# hicfilecpp equivalence report", "",
+        "# hiccpp equivalence report", "",
         f"Date: {time.strftime('%Y-%m-%d')}",
         f"Cases: {len(records)}, pass: {passed}, fail: {failed}", "",
         "Reference: hicstraw 1.3.1 for reading cases, Juicer tools pre for write cases.", "",
@@ -280,7 +280,7 @@ def main():
     parser.add_argument("--hic2cool-python", default=None, help="python of an environment with hic2cool 1.0.1")
     args = parser.parse_args()
     global MEASURE
-    MEASURE = args.measure or os.path.join(os.path.dirname(os.path.abspath(args.driver)), "hicfilecpp-measure")
+    MEASURE = args.measure or os.path.join(os.path.dirname(os.path.abspath(args.driver)), "hiccpp-measure")
 
     manifest_path = os.path.join(HERE, "data_manifest.json")
     manifest = {}
@@ -309,7 +309,7 @@ def main():
     if not args.out:
         sys.exit("--out is required")
     if not os.access(MEASURE, os.X_OK):
-        sys.exit(f"hicfilecpp-measure not found at {MEASURE}")
+        sys.exit(f"hiccpp-measure not found at {MEASURE}")
     cases = load_cases(case_files, resolver)
     names = [c["name"] for c in cases]
     duplicates = sorted({n for n in names if names.count(n) > 1})

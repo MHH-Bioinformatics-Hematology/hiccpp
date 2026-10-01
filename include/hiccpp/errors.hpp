@@ -1,12 +1,12 @@
-#ifndef HICFILECPP_ERRORS_HPP
-#define HICFILECPP_ERRORS_HPP
+#ifndef HICCPP_ERRORS_HPP
+#define HICCPP_ERRORS_HPP
 
 #include <stdexcept>
 #include <string>
 
-namespace hicfilecpp {
+namespace hiccpp {
 
-// Every failure hicfilecpp reports: an unreadable or malformed file, an
+// Every failure hiccpp reports: an unreadable or malformed file, an
 // unsupported version, an unknown chromosome, a missing zoom level or vector,
 // or invalid writer input.
 class HicError : public std::runtime_error {
@@ -14,6 +14,6 @@ public:
     using std::runtime_error::runtime_error;
 };
 
-}  // namespace hicfilecpp
+}  // namespace hiccpp
 
-#endif  // HICFILECPP_ERRORS_HPP
+#endif  // HICCPP_ERRORS_HPP

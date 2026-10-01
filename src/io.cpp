@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cerrno>
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 File::File(const std::string& path) : path_(path) {
     fd_ = ::open(path.c_str(), O_RDONLY | O_CLOEXEC);
@@ -132,4 +132,4 @@ std::string SequentialReader::cstr(size_t maxLength) {
     return text;
 }
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail

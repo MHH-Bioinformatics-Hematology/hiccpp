@@ -12,11 +12,11 @@
 #include <thread>
 
 #include "codec.hpp"
-#include "hicfilecpp/hicfile.hpp"
+#include "hiccpp/hicfile.hpp"
 #include "io.hpp"
 #include "state.hpp"
 
-namespace hicfilecpp {
+namespace hiccpp {
 
 namespace detail {
 
@@ -56,7 +56,7 @@ FileState::FileState(const std::string& fileName) : path(fileName), file(fileNam
     // version 6 differs only in its block records (decodeBlock).
     if (version < 6 || version > 9) {
         throw HicError("Version " + std::to_string(version) +
-                       " is not supported: hicfilecpp reads .hic versions 6 to 9");
+                       " is not supported: hiccpp reads .hic versions 6 to 9");
     }
     master = in.get<int64_t>();
     genome = in.cstr();
@@ -930,4 +930,4 @@ int64_t MatrixZoomData::getNumberOfTotalRecords() const {
     return total;
 }
 
-}  // namespace hicfilecpp
+}  // namespace hiccpp

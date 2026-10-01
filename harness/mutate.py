@@ -5,7 +5,7 @@ copy into a scratch directory, runs the cases the mutation targets with the
 mutated hicstraw first on PYTHONPATH, and requires at least one of them to
 fail. The installed hicstraw is never touched.
 
-    python harness/mutate.py --driver BUILD/harness/hicfilecpp-harness \\
+    python harness/mutate.py --driver BUILD/harness/hiccpp-harness \\
         --oracle-python ENV/bin/python --hicx-data HICX_TEST_DATA \\
         --straw-source STRAW/pybind11_python --scratch DIR \\
         [--include-dir DIR] [--library-dir DIR]

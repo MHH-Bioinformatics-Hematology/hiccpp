@@ -1,5 +1,5 @@
-#ifndef HICFILECPP_DETAIL_NORMS_HPP
-#define HICFILECPP_DETAIL_NORMS_HPP
+#ifndef HICCPP_DETAIL_NORMS_HPP
+#define HICCPP_DETAIL_NORMS_HPP
 
 // The normalization vectors and expected values Juicer tools compute, ported
 // from juicebox.tools.utils.norm.NormalizationCalculations, ZeroScale,
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 // One stored record of an intra-chromosomal matrix, in bins, x <= y.
 struct NormRecord {
@@ -97,6 +97,6 @@ extern template void addDistancesFromRecords(ExpectedValueCalculation&, int32_t,
 extern template void addDistancesFromRecords(ExpectedValueCalculation&, int32_t, const std::vector<NormRecord>&,
                                              const std::vector<float>&);
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail
 
-#endif  // HICFILECPP_DETAIL_NORMS_HPP
+#endif  // HICCPP_DETAIL_NORMS_HPP

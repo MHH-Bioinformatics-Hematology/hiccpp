@@ -1,5 +1,5 @@
-#ifndef HICFILECPP_DETAIL_IO_HPP
-#define HICFILECPP_DETAIL_IO_HPP
+#ifndef HICCPP_DETAIL_IO_HPP
+#define HICCPP_DETAIL_IO_HPP
 
 // Little-endian binary input: positional reads on a file descriptor (safe to
 // share between threads), a buffered sequential reader over it, and a bounds
@@ -11,13 +11,13 @@
 #include <string>
 #include <vector>
 
-#include "hicfilecpp/errors.hpp"
+#include "hiccpp/errors.hpp"
 
 #if !(defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-#error "hicfilecpp reads and writes .hic files on little-endian hosts only"
+#error "hiccpp reads and writes .hic files on little-endian hosts only"
 #endif
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 class File {
 public:
@@ -105,6 +105,6 @@ private:
     size_t pos_ = 0;
 };
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail
 
-#endif  // HICFILECPP_DETAIL_IO_HPP
+#endif  // HICCPP_DETAIL_IO_HPP

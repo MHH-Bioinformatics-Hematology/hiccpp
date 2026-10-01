@@ -2,7 +2,7 @@
 
 ## Licence
 
-hicfilecpp is MIT licensed (`LICENSE`), the licence of straw, Juicer tools and
+hiccpp is MIT licensed (`LICENSE`), the licence of straw, Juicer tools and
 hic2cool, whose behaviour and format it follows. `NOTICE` summarises the
 attributions; the sections below name them part by part.
 
@@ -66,7 +66,7 @@ int32 binY and float32 counts (`readBlock`, `version < 7`, as in Juicebox's
 `DatasetReaderV2` and hic2cool's `read_block`).
 
 No Juicer tools release that writes version 6 or 7 could be obtained on
-2026-09-14, so hicfilecpp does not write them:
+2026-09-14, so hiccpp does not write them:
 
 - Juicebox's `Preprocessor.java` has `VERSION = 8` in every commit of
   aidenlab/Juicebox, from the file's first commit there (2015-06-08) on, and

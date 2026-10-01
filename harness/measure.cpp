@@ -1,6 +1,6 @@
-// hicfilecpp-measure: runs a command and reports its CPU time and peak RSS.
+// hiccpp-measure: runs a command and reports its CPU time and peak RSS.
 //
-//   hicfilecpp-measure OUT.json TIMEOUT_SECONDS -- COMMAND [ARGS...]
+//   hiccpp-measure OUT.json TIMEOUT_SECONDS -- COMMAND [ARGS...]
 //
 // Linux carries a process's RSS high-water mark across exec, so a child forked
 // from a large process (the Python runner) would report the runner's RSS. This
@@ -39,7 +39,7 @@ void forward(int signal_number) {
 
 int main(int argc, char** argv) {
     if (argc < 5 || std::strcmp(argv[3], "--") != 0) {
-        std::fprintf(stderr, "usage: hicfilecpp-measure OUT.json TIMEOUT_SECONDS -- COMMAND [ARGS...]\n");
+        std::fprintf(stderr, "usage: hiccpp-measure OUT.json TIMEOUT_SECONDS -- COMMAND [ARGS...]\n");
         return 2;
     }
     const char* out_path = argv[1];

@@ -1,5 +1,5 @@
-# Builds the downstream project twice: once against an installed hicfilecpp
-# (find_package) and once pulling hicfilecpp in with FetchContent. Both builds
+# Builds the downstream project twice: once against an installed hiccpp
+# (find_package) and once pulling hiccpp in with FetchContent. Both builds
 # run the resulting program, which reads a .hic file through the library.
 
 cmake_minimum_required(VERSION 3.21)
@@ -26,11 +26,11 @@ set(data "${SOURCE_DIR}/tests/data/SRR1791297_30.juicer_tools_1.22.01.v8.hic")
 # would be split into separate arguments by execute_process.
 string(REPLACE ";" ":" prefix_env "${PREFIX_PATH}")
 
-# 1. Install hicfilecpp into a prefix and consume it with find_package.
+# 1. Install hiccpp into a prefix and consume it with find_package.
 set(ENV{CMAKE_PREFIX_PATH} "${prefix_env}")
 run(${CMAKE_COMMAND} -S "${SOURCE_DIR}" -B "${WORK_DIR}/lib-build" -G "${GENERATOR}"
     -DCMAKE_BUILD_TYPE=Release
-    -DHICFILECPP_BUILD_TESTS=OFF -DHICFILECPP_BUILD_HARNESS=OFF
+    -DHICCPP_BUILD_TESTS=OFF -DHICCPP_BUILD_HARNESS=OFF
     "-DCMAKE_INSTALL_PREFIX=${WORK_DIR}/prefix")
 run(${CMAKE_COMMAND} --build "${WORK_DIR}/lib-build" --parallel 8)
 run(${CMAKE_COMMAND} --install "${WORK_DIR}/lib-build")
@@ -46,6 +46,6 @@ run("${WORK_DIR}/find-build/consumer" "${data}")
 set(ENV{CMAKE_PREFIX_PATH} "${prefix_env}")
 run(${CMAKE_COMMAND} -S "${SOURCE_DIR}/tests/consumer" -B "${WORK_DIR}/fetch-build"
     -G "${GENERATOR}" -DCMAKE_BUILD_TYPE=Release -DCONSUME=FetchContent
-    "-DHICFILECPP_SOURCE=${SOURCE_DIR}")
+    "-DHICCPP_SOURCE=${SOURCE_DIR}")
 run(${CMAKE_COMMAND} --build "${WORK_DIR}/fetch-build" --parallel 8)
 run("${WORK_DIR}/fetch-build/consumer" "${data}")

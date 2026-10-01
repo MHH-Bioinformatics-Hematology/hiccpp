@@ -5,9 +5,9 @@
 #include <algorithm>
 #include <string>
 
-#include "hicfilecpp/errors.hpp"
+#include "hiccpp/errors.hpp"
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 namespace {
 
@@ -77,4 +77,4 @@ void deflateZlib(const char* data, size_t size, int level, std::vector<char>& ou
     out.resize(bound);
 }
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail

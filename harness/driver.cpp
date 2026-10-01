@@ -1,6 +1,6 @@
-// hicfilecpp-harness: runs one harness case through hicfilecpp.
+// hiccpp-harness: runs one harness case through hiccpp.
 //
-//   hicfilecpp-harness CASE.json OUT_DIR
+//   hiccpp-harness CASE.json OUT_DIR
 //
 // Writes OUT_DIR/result.json ({"op_seconds": s, "result": {...}}) and the
 // arrays the result refers to as .npy files, in the layout oracle.py writes
@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include <hicfilecpp/hicfilecpp.hpp>
+#include <hiccpp/hiccpp.hpp>
 
 #include "json.hpp"
 
@@ -53,7 +53,7 @@ void writeNpy(const std::string& path, const char* descr, const std::vector<int6
 }
 
 std::string opHeader(const Json& c) {
-    const hicfilecpp::HiCFile file(c["file"].str());
+    const hiccpp::HiCFile file(c["file"].str());
     std::ostringstream out;
     out << "{\"kind\": \"header\", \"genome\": " << quote(file.getGenomeID()) << ", \"resolutions\": [";
     const auto resolutions = file.getResolutions();
@@ -71,7 +71,7 @@ std::string opHeader(const Json& c) {
 }
 
 std::string opRecords(const Json& c, const std::string& dir) {
-    const hicfilecpp::HiCFile file(c["file"].str());
+    const hiccpp::HiCFile file(c["file"].str());
     std::vector<int32_t> binX;
     std::vector<int32_t> binY;
     std::vector<float> counts;
@@ -97,7 +97,7 @@ std::string opRecords(const Json& c, const std::string& dir) {
 }
 
 std::string opMatrices(const Json& c, const std::string& dir) {
-    const hicfilecpp::HiCFile file(c["file"].str());
+    const hiccpp::HiCFile file(c["file"].str());
     std::string shapes;
     const Json& queries = c["queries"];
     for (size_t k = 0; k < queries.size(); ++k) {
@@ -114,7 +114,7 @@ std::string opMatrices(const Json& c, const std::string& dir) {
 }
 
 std::string opVectors(const Json& c, const std::string& dir) {
-    const hicfilecpp::HiCFile file(c["file"].str());
+    const hiccpp::HiCFile file(c["file"].str());
     std::string lengths;
     const Json& queries = c["queries"];
     for (size_t k = 0; k < queries.size(); ++k) {
@@ -142,7 +142,7 @@ std::string readText(const std::string& path) {
 
 // The contacts writer_io.py prep writes: packed (chr1, chr2, bin1, bin2,
 // count) records grouped by chromosome pair, read one pair at a time.
-class PackedSource : public hicfilecpp::PixelSource {
+class PackedSource : public hiccpp::PixelSource {
 public:
     explicit PackedSource(const std::string& dir) : path_(dir + "/pixels.bin") {
         const Json pairs = Json::parse(readText(dir + "/pairs.json"));
@@ -156,7 +156,7 @@ public:
         }
     }
     void pixels(int32_t, int32_t chr1, int32_t chr2,
-                const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) override {
+                const std::function<void(const hiccpp::Pixel*, size_t)>& consume) override {
         const auto it = ranges_.find({chr1, chr2});
         if (it == ranges_.end()) {
             return;
@@ -171,7 +171,7 @@ public:
         std::ifstream in(path_, std::ios::binary);
         in.seekg(it->second.first * static_cast<int64_t>(sizeof(Packed)));
         std::vector<Packed> packed;
-        std::vector<hicfilecpp::Pixel> batch;
+        std::vector<hiccpp::Pixel> batch;
         for (int64_t done = it->second.first; done < it->second.second;) {
             const int64_t n = std::min<int64_t>(it->second.second - done, 1 << 20);
             packed.resize(static_cast<size_t>(n));
@@ -181,7 +181,7 @@ public:
             }
             batch.resize(packed.size());
             for (size_t k = 0; k < packed.size(); ++k) {
-                batch[k] = hicfilecpp::Pixel{packed[k].bin1, packed[k].bin2, packed[k].count};
+                batch[k] = hiccpp::Pixel{packed[k].bin1, packed[k].bin2, packed[k].count};
             }
             consume(batch.data(), batch.size());
             done += n;
@@ -195,7 +195,7 @@ private:
 };
 
 // The observed pixels of a .hic file at one resolution, decoded block by block.
-class HicSource : public hicfilecpp::PixelSource {
+class HicSource : public hiccpp::PixelSource {
 public:
     HicSource(const std::string& path, int threads) : file_(path), threads_(threads) {
         for (const auto& c : file_.getChromosomes()) {
@@ -205,19 +205,19 @@ public:
         }
     }
     void pixels(int32_t resolution, int32_t chr1, int32_t chr2,
-                const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) override {
+                const std::function<void(const hiccpp::Pixel*, size_t)>& consume) override {
         if (!file_.hasMatrix(chr1 + 1, chr2 + 1)) {
             return;
         }
         const auto& a = chromosomes[static_cast<size_t>(chr1)].first;
         const auto& b = chromosomes[static_cast<size_t>(chr2)].first;
         const auto mzd = file_.getMatrixZoomData(a, b, "observed", "NONE", "BP", resolution);
-        std::vector<hicfilecpp::Pixel> batch;
+        std::vector<hiccpp::Pixel> batch;
         mzd.forEachBlock(
-            [&](const hicfilecpp::BlockIndexEntry&, std::vector<hicfilecpp::ContactRecord>& records) {
+            [&](const hiccpp::BlockIndexEntry&, std::vector<hiccpp::ContactRecord>& records) {
                 batch.resize(records.size());
                 for (size_t k = 0; k < records.size(); ++k) {
-                    batch[k] = hicfilecpp::Pixel{records[k].binX, records[k].binY, records[k].counts};
+                    batch[k] = hiccpp::Pixel{records[k].binX, records[k].binY, records[k].counts};
                 }
                 consume(batch.data(), batch.size());
             },
@@ -226,12 +226,12 @@ public:
     std::vector<std::pair<std::string, int64_t>> chromosomes;
 
 private:
-    hicfilecpp::HiCFile file_;
+    hiccpp::HiCFile file_;
     int threads_;
 };
 
 std::string opWrite(const Json& c) {
-    hicfilecpp::WriteOptions options;
+    hiccpp::WriteOptions options;
     options.version = static_cast<int32_t>(c["version"].i64());
     options.genomeId = c["genome"].str();
     for (size_t i = 0; i < c["resolutions"].size(); ++i) {
@@ -252,14 +252,14 @@ std::string opWrite(const Json& c) {
     if (c.has("source_hic")) {
         HicSource source(c["source_hic"].str(), options.threads);
         options.chromosomes = source.chromosomes;
-        hicfilecpp::writeHicFile(output, options, source);
+        hiccpp::writeHicFile(output, options, source);
     } else {
         PackedSource source(c["inputs"].str());
         options.chromosomes = source.chromosomes;
-        hicfilecpp::writeHicFile(output, options, source);
+        hiccpp::writeHicFile(output, options, source);
     }
     if (viaAddNorm) {
-        hicfilecpp::addNorm(output, norms, options.threads);
+        hiccpp::addNorm(output, norms, options.threads);
     }
     return "{\"kind\": \"written\"}";
 }
@@ -287,7 +287,7 @@ std::string opContacts(const Json& c) {
         for (int32_t b = a; b < n; ++b) {
             const char* name1 = source.chromosomes[static_cast<size_t>(a)].first.c_str();
             const char* name2 = source.chromosomes[static_cast<size_t>(b)].first.c_str();
-            source.pixels(resolution, a, b, [&](const hicfilecpp::Pixel* pixels, size_t count) {
+            source.pixels(resolution, a, b, [&](const hiccpp::Pixel* pixels, size_t count) {
                 for (size_t k = 0; k < count; ++k) {
                     std::fprintf(out, "0 %s %lld 0 0 %s %lld 1 %.9g\n", name1,
                                  static_cast<long long>(pixels[k].bin1) * resolution, name2,
@@ -308,7 +308,7 @@ std::string opContacts(const Json& c) {
 
 int main(int argc, char** argv) {
     if (argc != 3) {
-        std::fprintf(stderr, "usage: hicfilecpp-harness CASE.json OUT_DIR\n");
+        std::fprintf(stderr, "usage: hiccpp-harness CASE.json OUT_DIR\n");
         return 2;
     }
     const std::string text = readText(argv[1]);
@@ -334,7 +334,7 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "unknown op %s\n", op.c_str());
             return 2;
         }
-    } catch (const hicfilecpp::HicError& error) {
+    } catch (const hiccpp::HicError& error) {
         result = "{\"kind\": \"error\", \"message\": " + quote(error.what()) + "}";
     }
     const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();

@@ -1,6 +1,6 @@
 # Reproduced behaviour and deliberate deviations
 
-hicfilecpp reproduces what hicstraw 1.3.1 returns and what Juicer tools pre and
+hiccpp reproduces what hicstraw 1.3.1 returns and what Juicer tools pre and
 addNorm write, including behaviour that looks surprising. Each reproduced item
 is exercised by the harness cases named in brackets.
 
@@ -27,7 +27,7 @@ is exercised by the harness cases named in brackets.
    [R.*.oe, V.*]
 6. A chromosome pair the file lacks, and an intra-chromosomal "oe" or
    "expected" query without expected values, return no records. hicstraw
-   prints a message; hicfilecpp keeps it in `message()` and reports
+   prints a message; hiccpp keeps it in `message()` and reports
    `found() == false`. [R.SRR.BP.2500000.oe, V.SRR.BP.2500000]
 7. `getRecordsAsMatrix` fills the mirrored cell of intra-chromosomal records
    and returns the 1 by 1 matrix `[[0]]` when there are no records.
@@ -43,7 +43,7 @@ is exercised by the harness cases named in brackets.
 ## Reading: deliberate deviations
 
 1. Versions below 6 and above 9 raise `HicError("Version N is not supported:
-   hicfilecpp reads .hic versions 6 to 9")`. hicstraw refuses versions below
+   hiccpp reads .hic versions 6 to 9")`. hicstraw refuses versions below
    6 with a message and reads a version above 9 as if it were 9. (Unit test
    "versions below 6 and above 9 are refused".)
 2. An unknown chromosome name raises `HicError("NAME not found in the
@@ -112,7 +112,7 @@ normalization vector with it.
     normalized one: Preprocessor builds its `fragmentCountMap` from
     `sites.length + 1`, while the normalization step reads the file back and
     DatasetReaderV2 puts `sites.length` in the map, so the two sections of one
-    file disagree by one fragment. hicfilecpp reproduces both. [F]
+    file disagree by one fragment. hiccpp reproduces both. [F]
 10. A normalization vector of a fragment zoom holds `siteCount / binSize + 1`
     entries, the bin count of Juicer's HiCFragmentAxis, and not the
     `blockBinCount` times `blockColumnCount` of a base pair zoom, which is one
@@ -126,12 +126,12 @@ normalization vector with it.
 1. The bytes differ from Juicer's: matrix headers follow their blocks, version
    8 blocks choose between the list-of-rows and dense layouts the way 1.22.01
    does but compression may differ, and the header carries the "software"
-   attribute ("hicfilecpp <version>" unless set) and the caller's attributes,
+   attribute ("hiccpp <version>" unless set) and the caller's attributes,
    not Juicer's `hicFileScalingFactor`, `nviIndex` and `nviLength`.
 2. Genome-wide and inter-chromosomal normalizations and the filters and
    statistics options of pre are not written.
 3. Juicer skips a chromosome's normalization when its Java heap looks too
-   small (records times 1000 at least the maximum heap); hicfilecpp always
+   small (records times 1000 at least the maximum heap); hiccpp always
    computes it. Juicer 2.20.00 spills blocks to temporary files and may then
    sum repeated non-integer counts in another order; such counts agree to
    floating point rounding.

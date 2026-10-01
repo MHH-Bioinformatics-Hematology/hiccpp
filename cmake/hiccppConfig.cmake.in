@@ -1,10 +1,10 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-# hicfilecpp links zlib and the thread library privately; a static hicfilecpp
+# hiccpp links zlib and the thread library privately; a static hiccpp
 # still needs both at link time, and a shared one finds them through its RPATH.
 find_dependency(ZLIB)
 find_dependency(Threads)
 
-include("${CMAKE_CURRENT_LIST_DIR}/hicfilecppTargets.cmake")
-check_required_components(hicfilecpp)
+include("${CMAKE_CURRENT_LIST_DIR}/hiccppTargets.cmake")
+check_required_components(hiccpp)

@@ -1,4 +1,4 @@
-# hicfilecpp
+# hiccpp
 
 A C++20 library that reads the Juicer `.hic` format, versions 6 to 9, and
 writes versions 8 and 9, without Python or Java.
@@ -19,14 +19,14 @@ writes versions 8 and 9, without Python or Java.
   pixels from `PixelSource::fragPixels`.
 
 ```cpp
-#include <hicfilecpp/hicfilecpp.hpp>
+#include <hiccpp/hiccpp.hpp>
 
-hicfilecpp::HiCFile hic("matrix.hic");
+hiccpp::HiCFile hic("matrix.hic");
 auto mzd = hic.getMatrixZoomData("chr1", "chr1", "observed", "KR", "BP", 10000);
 auto records = mzd.getRecords(0, 5000000, 0, 5000000);      // binX, binY, counts
 auto dense = mzd.getRecordsAsMatrix(0, 1000000, 0, 1000000);
 
-hicfilecpp::WriteOptions options;
+hiccpp::WriteOptions options;
 options.version = 9;
 options.chromosomes = {{"chr1", 248956422}, {"chr2", 242193529}};
 options.sourceResolution = 5000;                             // the pixels' resolution
@@ -35,8 +35,8 @@ options.fragResolutions = {20, 100};                         // fragment maps, a
 options.fragmentSites = sites;                               // one site list per chromosome
 options.sourceFragResolution = 20;                           // the fragment pixels' resolution
 options.threads = 8;
-hicfilecpp::writeHicFile("out.hic", options, source);        // source: a hicfilecpp::PixelSource
-hicfilecpp::addNorm("other.hic", {"VC", "KR", "SCALE"});
+hiccpp::writeHicFile("out.hic", options, source);        // source: a hiccpp::PixelSource
+hiccpp::addNorm("other.hic", {"VC", "KR", "SCALE"});
 ```
 
 Beyond hicstraw, `HiCFile` exposes the version, the attributes, FRAG
@@ -61,21 +61,21 @@ fetched for the tests.
 cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/zlib/prefix
 cmake --build build -j
 ctest --test-dir build --output-on-failure
-cmake --install build --prefix /opt/hicfilecpp
+cmake --install build --prefix /opt/hiccpp
 ```
 
 Downstream projects use either
 
 ```cmake
-find_package(hicfilecpp 0.5 REQUIRED)
-target_link_libraries(app PRIVATE hicfilecpp::hicfilecpp)
+find_package(hiccpp 0.5 REQUIRED)
+target_link_libraries(app PRIVATE hiccpp::hiccpp)
 ```
 
-or `FetchContent_Declare(hicfilecpp ...)` with `FetchContent_MakeAvailable`.
+or `FetchContent_Declare(hiccpp ...)` with `FetchContent_MakeAvailable`.
 
 ## Equivalence harness
 
-`harness/run.py` runs the reading cases through hicstraw and hicfilecpp and
+`harness/run.py` runs the reading cases through hicstraw and hiccpp and
 compares the results: records and matrices bit for bit, vectors to three
 significant digits or better, with CPU time and peak RSS gated against
 hicstraw. The writing cases run Juicer tools pre on the same contacts, require
@@ -85,13 +85,13 @@ that the output is identical on one thread, on several and when repeated, and
 gate CPU time against Juicer. hicstraw runs in its own Python environment:
 
 ```sh
-python harness/run.py --driver build/harness/hicfilecpp-harness \
+python harness/run.py --driver build/harness/hiccpp-harness \
     --oracle-python /path/to/env/bin/python \
     --hicx-data /path/to/HiCExplorer/hicexplorer/test/test_data \
     --java /path/to/java --juicer8 juicer_tools_1.22.01.jar \
     --juicer9 juicer_tools.2.20.00.jar \
     --hic2cool-python /path/to/env-with-hic2cool/bin/python --out report
-python harness/mutate.py --driver build/harness/hicfilecpp-harness \
+python harness/mutate.py --driver build/harness/hiccpp-harness \
     --oracle-python /path/to/env/bin/python --hicx-data ... \
     --straw-source /path/to/straw/pybind11_python --scratch scratch
 ```

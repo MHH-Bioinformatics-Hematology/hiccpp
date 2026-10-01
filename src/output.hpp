@@ -1,5 +1,5 @@
-#ifndef HICFILECPP_DETAIL_OUTPUT_HPP
-#define HICFILECPP_DETAIL_OUTPUT_HPP
+#ifndef HICCPP_DETAIL_OUTPUT_HPP
+#define HICCPP_DETAIL_OUTPUT_HPP
 
 // Little-endian output: a byte buffer, a buffered file that can patch bytes
 // it has already written, and a small thread pool whose parallelFor runs one
@@ -16,7 +16,7 @@
 #include <thread>
 #include <vector>
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 class ByteWriter {
 public:
@@ -96,6 +96,6 @@ private:
     bool stop_ = false;
 };
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail
 
-#endif  // HICFILECPP_DETAIL_OUTPUT_HPP
+#endif  // HICCPP_DETAIL_OUTPUT_HPP

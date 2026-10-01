@@ -1,5 +1,5 @@
-#ifndef HICFILECPP_HARNESS_JSON_HPP
-#define HICFILECPP_HARNESS_JSON_HPP
+#ifndef HICCPP_HARNESS_JSON_HPP
+#define HICCPP_HARNESS_JSON_HPP
 
 // A small JSON reader for the harness case files, and string quoting for the
 // result documents the driver writes.
@@ -221,4 +221,4 @@ inline std::string quote(const std::string& text) {
 
 }  // namespace harness
 
-#endif  // HICFILECPP_HARNESS_JSON_HPP
+#endif  // HICCPP_HARNESS_JSON_HPP

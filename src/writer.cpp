@@ -11,7 +11,7 @@
 // header before its blocks; readers locate both through the index, so the
 // order does not matter to them.
 
-#include "hicfilecpp/writer.hpp"
+#include "hiccpp/writer.hpp"
 
 #include <algorithm>
 #include <climits>
@@ -26,13 +26,13 @@
 #include <vector>
 
 #include "codec.hpp"
-#include "hicfilecpp/hicfile.hpp"
-#include "hicfilecpp/version.hpp"
+#include "hiccpp/hicfile.hpp"
+#include "hiccpp/version.hpp"
 #include "norms.hpp"
 #include "output.hpp"
 #include "state.hpp"
 
-namespace hicfilecpp {
+namespace hiccpp {
 
 namespace detail {
 
@@ -385,7 +385,7 @@ void validateNormalizations(const std::vector<std::string>& normalizations) {
     std::set<std::string> seen;
     for (const auto& norm : normalizations) {
         if (std::find(kNormOrder.begin(), kNormOrder.end(), norm) == kNormOrder.end()) {
-            throw HicError("unsupported normalization " + norm + "; hicfilecpp computes VC, VC_SQRT, KR and SCALE");
+            throw HicError("unsupported normalization " + norm + "; hiccpp computes VC, VC_SQRT, KR and SCALE");
         }
         if (!seen.insert(norm).second) {
             throw HicError("normalization " + norm + " is listed twice");
@@ -616,7 +616,7 @@ void validate(const WriteOptions& options) {
     if (options.version == 6 || options.version == 7) {
         throw HicError("writing .hic version " + std::to_string(options.version) +
                        " is not supported: no Juicer tools release that writes it can be obtained to "
-                       "validate against; hicfilecpp reads versions 6 to 9 and writes 8 and 9");
+                       "validate against; hiccpp reads versions 6 to 9 and writes 8 and 9");
     }
     if (options.version != 8 && options.version != 9) {
         throw HicError("version must be 8 or 9, got " + std::to_string(options.version));
@@ -779,7 +779,7 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
     }
     header.put<int32_t>(static_cast<int32_t>(options.attributes.size()) + 1);
     header.cstr("software");
-    header.cstr(options.software.empty() ? std::string("hicfilecpp ") + kVersion : options.software);
+    header.cstr(options.software.empty() ? std::string("hiccpp ") + kVersion : options.software);
     for (const auto& [key, value] : options.attributes) {
         header.cstr(key);
         header.cstr(value);
@@ -1096,4 +1096,4 @@ void addNorm(const std::string& path, const std::vector<std::string>& normalizat
     out.close();
 }
 
-}  // namespace hicfilecpp
+}  // namespace hiccpp

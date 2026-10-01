@@ -1,5 +1,5 @@
-#ifndef HICFILECPP_WRITER_HPP
-#define HICFILECPP_WRITER_HPP
+#ifndef HICCPP_WRITER_HPP
+#define HICCPP_WRITER_HPP
 
 // Writing .hic files, versions 8 and 9. writeHicFile corresponds to Juicer
 // tools "pre" (followed by its normalization step) and addNorm to "addNorm":
@@ -15,9 +15,9 @@
 #include <utility>
 #include <vector>
 
-#include "hicfilecpp/errors.hpp"
+#include "hiccpp/errors.hpp"
 
-namespace hicfilecpp {
+namespace hiccpp {
 
 // A pixel handed to the writer: bins of the requested resolution, local to
 // their chromosomes, and the count.
@@ -113,7 +113,7 @@ struct WriteOptions {
     std::function<std::vector<double>(const std::string& name, int32_t chrIndex, int32_t resolution)> fragNormVector;
     // Header attributes written after "software", in order.
     std::vector<std::pair<std::string, std::string>> attributes;
-    // The "software" attribute; empty means "hicfilecpp <version>".
+    // The "software" attribute; empty means "hiccpp <version>".
     std::string software;
     // Threads for block encoding and compression.
     int threads = 1;
@@ -129,6 +129,6 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
 // it holds, as Juicer tools addNorm does.
 void addNorm(const std::string& path, const std::vector<std::string>& normalizations, int threads = 1);
 
-}  // namespace hicfilecpp
+}  // namespace hiccpp
 
-#endif  // HICFILECPP_WRITER_HPP
+#endif  // HICCPP_WRITER_HPP

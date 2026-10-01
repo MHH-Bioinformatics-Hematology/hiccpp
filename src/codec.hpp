@@ -1,12 +1,12 @@
-#ifndef HICFILECPP_DETAIL_CODEC_HPP
-#define HICFILECPP_DETAIL_CODEC_HPP
+#ifndef HICCPP_DETAIL_CODEC_HPP
+#define HICCPP_DETAIL_CODEC_HPP
 
 // zlib streams, the compression of .hic blocks.
 
 #include <cstddef>
 #include <vector>
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 // Inflates one zlib stream. Like hicstraw, a stream that ends early yields
 // the bytes decoded so far.
@@ -16,6 +16,6 @@ void inflateZlib(const char* data, size_t size, std::vector<char>& out);
 // the input, the level and the zlib version.
 void deflateZlib(const char* data, size_t size, int level, std::vector<char>& out);
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail
 
-#endif  // HICFILECPP_DETAIL_CODEC_HPP
+#endif  // HICCPP_DETAIL_CODEC_HPP

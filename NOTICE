@@ -1,4 +1,4 @@
-hicfilecpp reads and writes the Juicer .hic format and reproduces the
+hiccpp reads and writes the Juicer .hic format and reproduces the
 behaviour of the implementations named, part by part, in docs/PROVENANCE.md.
 Those projects are MIT licensed, as is this library.
 

@@ -10,19 +10,19 @@
 #include <tuple>
 #include <vector>
 
-#include <hicfilecpp/hicfilecpp.hpp>
+#include <hiccpp/hiccpp.hpp>
 
 namespace {
 
-const std::string kData = HICFILECPP_TEST_DATA;
+const std::string kData = HICCPP_TEST_DATA;
 const std::string kJ8 = kData + "/SRR1791297_30.juicer_tools_1.22.01.v8.hic";
 const std::string kJ9 = kData + "/SRR1791297_30.juicer_tools_2.20.00.v9.hic";
 const std::string kJ8Frag = kData + "/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic";
 const std::string kJ9Frag = kData + "/SRR1791297_30.juicer_tools_2.20.00.frag.v9.hic";
 
 std::string scratch(const std::string& name) {
-    std::filesystem::create_directories(HICFILECPP_TEST_SCRATCH);
-    return std::string(HICFILECPP_TEST_SCRATCH) + "/" + name;
+    std::filesystem::create_directories(HICCPP_TEST_SCRATCH);
+    return std::string(HICCPP_TEST_SCRATCH) + "/" + name;
 }
 
 std::vector<char> bytesOf(const std::string& path) {
@@ -32,7 +32,7 @@ std::vector<char> bytesOf(const std::string& path) {
 
 using Key = std::tuple<int32_t, int32_t, float>;
 
-std::vector<Key> recordsOf(const hicfilecpp::HiCFile& file, const std::string& a, const std::string& b,
+std::vector<Key> recordsOf(const hiccpp::HiCFile& file, const std::string& a, const std::string& b,
                            int32_t resolution, const std::string& norm = "NONE") {
     const auto chromosomes = file.getChromosomes();
     int64_t la = 0;
@@ -51,7 +51,7 @@ std::vector<Key> recordsOf(const hicfilecpp::HiCFile& file, const std::string& a
 }
 
 // The 10 kb pixels of a Juicer-written test file.
-class HicSource : public hicfilecpp::PixelSource {
+class HicSource : public hiccpp::PixelSource {
 public:
     HicSource(const std::string& path, int32_t resolution) : file_(path), resolution_(resolution) {
         for (const auto& c : file_.getChromosomes()) {
@@ -61,31 +61,31 @@ public:
         }
     }
     void pixels(int32_t resolution, int32_t chr1, int32_t chr2,
-                const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) override {
+                const std::function<void(const hiccpp::Pixel*, size_t)>& consume) override {
         REQUIRE(resolution == resolution_);
         if (!file_.hasMatrix(chr1 + 1, chr2 + 1)) {
             return;
         }
         const auto& a = chromosomes[static_cast<size_t>(chr1)];
         const auto& b = chromosomes[static_cast<size_t>(chr2)];
-        std::vector<hicfilecpp::Pixel> batch;
+        std::vector<hiccpp::Pixel> batch;
         for (const auto& r : file_.getMatrixZoomData(a.first, b.first, "observed", "NONE", "BP", resolution)
                                  .getRecords(0, a.second, 0, b.second)) {
-            batch.push_back(hicfilecpp::Pixel{r.binX / resolution, r.binY / resolution, r.counts});
+            batch.push_back(hiccpp::Pixel{r.binX / resolution, r.binY / resolution, r.counts});
         }
         consume(batch.data(), batch.size());
     }
     std::vector<std::pair<std::string, int64_t>> chromosomes;
 
 private:
-    hicfilecpp::HiCFile file_;
+    hiccpp::HiCFile file_;
     int32_t resolution_;
 };
 
 // The pixels of a Juicer-written file with fragment maps: base pair pixels at
 // the finest base pair resolution and fragment pixels at the finest fragment
 // one, with the file's own restriction sites.
-class FragSource : public hicfilecpp::PixelSource {
+class FragSource : public hiccpp::PixelSource {
 public:
     FragSource(const std::string& path, int32_t resolution, int32_t fragResolution)
         : file_(path), resolution_(resolution), fragResolution_(fragResolution) {
@@ -104,7 +104,7 @@ public:
     }
 
     void emit(int32_t resolution, int32_t chr1, int32_t chr2, const std::string& unit,
-              const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) {
+              const std::function<void(const hiccpp::Pixel*, size_t)>& consume) {
         if (!file_.hasMatrix(chr1 + 1, chr2 + 1)) {
             return;
         }
@@ -112,21 +112,21 @@ public:
         const auto& b = chromosomes[static_cast<size_t>(chr2)];
         const int64_t ea = unit == "FRAG" ? fragExtent(chr1, resolution) : a.second;
         const int64_t eb = unit == "FRAG" ? fragExtent(chr2, resolution) : b.second;
-        std::vector<hicfilecpp::Pixel> batch;
+        std::vector<hiccpp::Pixel> batch;
         for (const auto& r :
              file_.getMatrixZoomData(a.first, b.first, "observed", "NONE", unit, resolution).getRecords(0, ea, 0, eb)) {
-            batch.push_back(hicfilecpp::Pixel{r.binX / resolution, r.binY / resolution, r.counts});
+            batch.push_back(hiccpp::Pixel{r.binX / resolution, r.binY / resolution, r.counts});
         }
         consume(batch.data(), batch.size());
     }
 
     void pixels(int32_t resolution, int32_t chr1, int32_t chr2,
-                const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) override {
+                const std::function<void(const hiccpp::Pixel*, size_t)>& consume) override {
         REQUIRE(resolution == resolution_);
         emit(resolution, chr1, chr2, "BP", consume);
     }
     void fragPixels(int32_t resolution, int32_t chr1, int32_t chr2,
-                    const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) override {
+                    const std::function<void(const hiccpp::Pixel*, size_t)>& consume) override {
         REQUIRE(resolution == fragResolution_);
         emit(resolution, chr1, chr2, "FRAG", consume);
     }
@@ -135,14 +135,14 @@ public:
     std::vector<std::vector<int32_t>> sites;
 
 private:
-    hicfilecpp::HiCFile file_;
+    hiccpp::HiCFile file_;
     int32_t resolution_;
     int32_t fragResolution_;
 };
 
 // The resolutions of the FRAG test files: pre -r 500000,50000,100f,20f.
-hicfilecpp::WriteOptions fragOptionsFor(const FragSource& source, int32_t version) {
-    hicfilecpp::WriteOptions options;
+hiccpp::WriteOptions fragOptionsFor(const FragSource& source, int32_t version) {
+    hiccpp::WriteOptions options;
     options.version = version;
     options.genomeId = "sacCer3.chrom.sizes";
     options.chromosomes = source.chromosomes;
@@ -159,7 +159,7 @@ hicfilecpp::WriteOptions fragOptionsFor(const FragSource& source, int32_t versio
     return options;
 }
 
-std::vector<Key> fragRecordsOf(const hicfilecpp::HiCFile& file, const FragSource& source, int32_t chr1, int32_t chr2,
+std::vector<Key> fragRecordsOf(const hiccpp::HiCFile& file, const FragSource& source, int32_t chr1, int32_t chr2,
                                int32_t resolution) {
     std::vector<Key> out;
     for (const auto& r : file
@@ -174,8 +174,8 @@ std::vector<Key> fragRecordsOf(const hicfilecpp::HiCFile& file, const FragSource
     return out;
 }
 
-hicfilecpp::WriteOptions optionsFor(const HicSource& source, int32_t version) {
-    hicfilecpp::WriteOptions options;
+hiccpp::WriteOptions optionsFor(const HicSource& source, int32_t version) {
+    hiccpp::WriteOptions options;
     options.version = version;
     options.genomeId = "sacCer3.chrom.sizes";
     options.chromosomes = source.chromosomes;
@@ -207,19 +207,19 @@ TEST_CASE("writing versions 6 and 7 is refused with the reason, other versions a
     HicSource source(kJ8, 10000);
     for (const int32_t version : {6, 7}) {
         const std::string path = scratch("refused.v" + std::to_string(version) + ".hic");
-        CHECK_THROWS_WITH_AS(hicfilecpp::writeHicFile(path, optionsFor(source, version), source),
+        CHECK_THROWS_WITH_AS(hiccpp::writeHicFile(path, optionsFor(source, version), source),
                              ("writing .hic version " + std::to_string(version) +
                               " is not supported: no Juicer tools release that writes it can be "
-                              "obtained to validate against; hicfilecpp reads versions 6 to 9 and "
+                              "obtained to validate against; hiccpp reads versions 6 to 9 and "
                               "writes 8 and 9")
                                  .c_str(),
-                             hicfilecpp::HicError);
+                             hiccpp::HicError);
     }
     for (const int32_t version : {5, 10}) {
         const std::string path = scratch("refused.v" + std::to_string(version) + ".hic");
-        CHECK_THROWS_WITH_AS(hicfilecpp::writeHicFile(path, optionsFor(source, version), source),
+        CHECK_THROWS_WITH_AS(hiccpp::writeHicFile(path, optionsFor(source, version), source),
                              ("version must be 8 or 9, got " + std::to_string(version)).c_str(),
-                             hicfilecpp::HicError);
+                             hiccpp::HicError);
     }
 }
 
@@ -227,9 +227,9 @@ TEST_CASE("written files return the source pixels and Juicer's coarser pixels") 
     for (const int32_t version : {8, 9}) {
         HicSource source(kJ8, 10000);
         const std::string path = scratch("roundtrip.v" + std::to_string(version) + ".hic");
-        hicfilecpp::writeHicFile(path, optionsFor(source, version), source);
-        const hicfilecpp::HiCFile written(path);
-        const hicfilecpp::HiCFile juicer(kJ8);
+        hiccpp::writeHicFile(path, optionsFor(source, version), source);
+        const hiccpp::HiCFile written(path);
+        const hiccpp::HiCFile juicer(kJ8);
         CHECK(written.version() == version);
         CHECK(written.getResolutions() == std::vector<int32_t>{50000, 10000});
         CHECK(written.getChromosomes().size() == juicer.getChromosomes().size());
@@ -250,9 +250,9 @@ TEST_CASE("normalization vectors and expected values agree with Juicer tools") {
     for (const auto& [version, reference] : {std::pair{8, kJ8}, std::pair{9, kJ9}}) {
         HicSource source(kJ8, 10000);
         const std::string path = scratch("norms.v" + std::to_string(version) + ".hic");
-        hicfilecpp::writeHicFile(path, optionsFor(source, version), source);
-        const hicfilecpp::HiCFile written(path);
-        const hicfilecpp::HiCFile juicer(reference);
+        hiccpp::writeHicFile(path, optionsFor(source, version), source);
+        const hiccpp::HiCFile written(path);
+        const hiccpp::HiCFile juicer(reference);
         for (const std::string norm : {"VC", "VC_SQRT", "KR", "SCALE"}) {
             for (const int32_t resolution : {10000, 50000}) {
                 for (int32_t chr = 1; chr <= 16; ++chr) {
@@ -290,10 +290,10 @@ TEST_CASE("the output does not depend on the number of threads or on the run") {
         const std::string many = scratch("threads8.hic");
         const std::string again = scratch("threads8.again.hic");
         options.threads = 1;
-        hicfilecpp::writeHicFile(one, options, source);
+        hiccpp::writeHicFile(one, options, source);
         options.threads = 8;
-        hicfilecpp::writeHicFile(many, options, source);
-        hicfilecpp::writeHicFile(again, options, source);
+        hiccpp::writeHicFile(many, options, source);
+        hiccpp::writeHicFile(again, options, source);
         CHECK(bytesOf(one) == bytesOf(many));
         CHECK(bytesOf(many) == bytesOf(again));
     }
@@ -305,11 +305,11 @@ TEST_CASE("addNorm on a file written without normalizations equals writing with 
         auto options = optionsFor(source, version);
         const std::string with = scratch("with_norms.hic");
         const std::string without = scratch("added_norms.hic");
-        hicfilecpp::writeHicFile(with, options, source);
+        hiccpp::writeHicFile(with, options, source);
         options.normalizations.clear();
-        hicfilecpp::writeHicFile(without, options, source);
-        CHECK(hicfilecpp::HiCFile(without).normVectorIndex().empty());
-        hicfilecpp::addNorm(without, {"VC", "VC_SQRT", "KR", "SCALE"}, 4);
+        hiccpp::writeHicFile(without, options, source);
+        CHECK(hiccpp::HiCFile(without).normVectorIndex().empty());
+        hiccpp::addNorm(without, {"VC", "VC_SQRT", "KR", "SCALE"}, 4);
         CHECK(bytesOf(with) == bytesOf(without));
     }
 }
@@ -320,25 +320,25 @@ TEST_CASE("invalid writer input raises HicError") {
     const std::string path = scratch("invalid.hic");
     auto bad = options;
     bad.version = 7;
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.resolutions = {15000};
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.normalizations = {"GW_KR"};
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.chromosomes[0].second = 1000;
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
-    CHECK_THROWS_AS(hicfilecpp::addNorm(kData + "/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic", {"VC"}),
-                    hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
+    CHECK_THROWS_AS(hiccpp::addNorm(kData + "/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic", {"VC"}),
+                    hiccpp::HicError);
 }
 
 TEST_CASE("provided normalization vectors are stored as given with their expected values") {
     for (const auto& [version, reference] : {std::pair{8, kJ8}, std::pair{9, kJ9}}) {
         HicSource source(kJ8, 10000);
         auto options = optionsFor(source, version);
-        const hicfilecpp::HiCFile juicer(reference);
+        const hiccpp::HiCFile juicer(reference);
         options.normalizations = {"VC"};
         options.providedNormalizations = {"KR", "GW_KR"};
         int32_t asked = 0;
@@ -354,9 +354,9 @@ TEST_CASE("provided normalization vectors are stored as given with their expecte
             return *vector;
         };
         const std::string path = scratch("provided.v" + std::to_string(version) + ".hic");
-        hicfilecpp::writeHicFile(path, options, source);
+        hiccpp::writeHicFile(path, options, source);
         CHECK(asked == 2 * 2 * 16);
-        const hicfilecpp::HiCFile written(path);
+        const hiccpp::HiCFile written(path);
         CHECK(written.hasNormalizedExpectedSection());
         for (const int32_t resolution : {10000, 50000}) {
             for (int32_t chr = 1; chr <= 16; ++chr) {
@@ -381,13 +381,13 @@ TEST_CASE("provided normalization vectors are stored as given with their expecte
 
         auto bad = options;
         bad.providedNormalizations = {"VC"};
-        CHECK_THROWS_AS(hicfilecpp::writeHicFile(scratch("bad.hic"), bad, source), hicfilecpp::HicError);
+        CHECK_THROWS_AS(hiccpp::writeHicFile(scratch("bad.hic"), bad, source), hiccpp::HicError);
         bad = options;
         bad.normVector = nullptr;
-        CHECK_THROWS_AS(hicfilecpp::writeHicFile(scratch("bad.hic"), bad, source), hicfilecpp::HicError);
+        CHECK_THROWS_AS(hiccpp::writeHicFile(scratch("bad.hic"), bad, source), hiccpp::HicError);
         bad = options;
         bad.providedNormalizations = {"K R"};
-        CHECK_THROWS_AS(hicfilecpp::writeHicFile(scratch("bad.hic"), bad, source), hicfilecpp::HicError);
+        CHECK_THROWS_AS(hiccpp::writeHicFile(scratch("bad.hic"), bad, source), hiccpp::HicError);
     }
 }
 
@@ -396,24 +396,24 @@ TEST_CASE("a footer without a normalized expected-value section is reported") {
     auto options = optionsFor(source, 8);
     options.normalizations.clear();
     const std::string path = scratch("no_norm_section.hic");
-    hicfilecpp::writeHicFile(path, options, source);
-    CHECK(hicfilecpp::HiCFile(path).hasNormalizedExpectedSection());
+    hiccpp::writeHicFile(path, options, source);
+    CHECK(hiccpp::HiCFile(path).hasNormalizedExpectedSection());
     // Version 8 without normalizations ends with two zero counts: the
     // normalized expected values and the vector index.
     std::filesystem::resize_file(path, std::filesystem::file_size(path) - 8);
-    const hicfilecpp::HiCFile truncated(path);
+    const hiccpp::HiCFile truncated(path);
     CHECK_FALSE(truncated.hasNormalizedExpectedSection());
     CHECK(truncated.getNormalizationTypes().empty());
-    CHECK(hicfilecpp::HiCFile(kJ9).hasNormalizedExpectedSection());
+    CHECK(hiccpp::HiCFile(kJ9).hasNormalizedExpectedSection());
 }
 
 TEST_CASE("fragment resolutions reproduce the FRAG records, vectors and expected values of Juicer tools") {
     for (const auto& [version, reference] : {std::pair{8, kJ8Frag}, std::pair{9, kJ9Frag}}) {
         FragSource source(reference, 50000, 20);
         const std::string path = scratch("frag.v" + std::to_string(version) + ".hic");
-        hicfilecpp::writeHicFile(path, fragOptionsFor(source, version), source);
-        const hicfilecpp::HiCFile written(path);
-        const hicfilecpp::HiCFile juicer(reference);
+        hiccpp::writeHicFile(path, fragOptionsFor(source, version), source);
+        const hiccpp::HiCFile written(path);
+        const hiccpp::HiCFile juicer(reference);
         CAPTURE(version);
         CHECK(written.getResolutions() == juicer.getResolutions());
         CHECK(written.getFragResolutions() == juicer.getFragResolutions());
@@ -511,9 +511,9 @@ TEST_CASE("a fragment file does not depend on the number of threads") {
         const std::string one = scratch("frag.threads1.hic");
         const std::string many = scratch("frag.threads8.hic");
         options.threads = 1;
-        hicfilecpp::writeHicFile(one, options, source);
+        hiccpp::writeHicFile(one, options, source);
         options.threads = 8;
-        hicfilecpp::writeHicFile(many, options, source);
+        hiccpp::writeHicFile(many, options, source);
         CHECK(bytesOf(one) == bytesOf(many));
     }
 }
@@ -524,22 +524,22 @@ TEST_CASE("fragment options are checked and a base pair source needs none") {
     const std::string path = scratch("frag.invalid.hic");
     auto bad = options;
     bad.fragResolutions = {30};  // not a multiple of the source fragment resolution
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.sourceFragResolution = 0;
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.fragmentSites.pop_back();
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.fragResolutions.clear();
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.fragmentSites[0] = {1000, 500};  // out of order
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
     bad = options;
     bad.fragResolutions = {100, 100};
-    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    CHECK_THROWS_AS(hiccpp::writeHicFile(path, bad, source), hiccpp::HicError);
 
     // A source that does not override fragPixels hands over no fragment pixels,
     // so the matrices hold base pair zooms only.
@@ -549,8 +549,8 @@ TEST_CASE("fragment options are checked and a base pair source needs none") {
     onlyBp.sourceFragResolution = 20;
     onlyBp.fragmentSites = source.sites;
     const std::string onlyBpPath = scratch("frag.none.hic");
-    hicfilecpp::writeHicFile(onlyBpPath, onlyBp, plain);
-    const hicfilecpp::HiCFile written(onlyBpPath);
+    hiccpp::writeHicFile(onlyBpPath, onlyBp, plain);
+    const hiccpp::HiCFile written(onlyBpPath);
     CHECK(written.getFragResolutions() == std::vector<int32_t>{100});
     CHECK(written.fragmentSiteCounts().size() == source.sites.size() + 1);
     for (const auto& header : written.matrixZoomHeaders(1, 1)) {
@@ -561,7 +561,7 @@ TEST_CASE("fragment options are checked and a base pair source needs none") {
 TEST_CASE("provided normalization vectors are stored for the fragment resolutions too") {
     FragSource source(kJ8Frag, 50000, 20);
     auto options = fragOptionsFor(source, 8);
-    const hicfilecpp::HiCFile juicer(kJ8Frag);
+    const hiccpp::HiCFile juicer(kJ8Frag);
     options.normalizations = {"VC"};
     options.providedNormalizations = {"KR"};
     options.normVector = [&](const std::string& name, int32_t chrIndex, int32_t resolution) {
@@ -575,9 +575,9 @@ TEST_CASE("provided normalization vectors are stored for the fragment resolution
         return vector.value_or(std::vector<double>{});
     };
     const std::string path = scratch("frag.provided.hic");
-    hicfilecpp::writeHicFile(path, options, source);
+    hiccpp::writeHicFile(path, options, source);
     CHECK(askedFrag == 2 * 16);
-    const hicfilecpp::HiCFile written(path);
+    const hiccpp::HiCFile written(path);
     for (const int32_t resolution : {100, 20}) {
         for (int32_t chr = 1; chr <= 16; ++chr) {
             const auto theirs = juicer.readNormVector("KR", chr, "FRAG", resolution);
@@ -603,8 +603,8 @@ TEST_CASE("provided normalization vectors are stored for the fragment resolution
     // normalizations only.
     options.fragNormVector = nullptr;
     const std::string other = scratch("frag.provided.none.hic");
-    hicfilecpp::writeHicFile(other, options, source);
-    const hicfilecpp::HiCFile plain(other);
+    hiccpp::writeHicFile(other, options, source);
+    const hiccpp::HiCFile plain(other);
     CHECK_FALSE(plain.readNormVector("KR", 1, "FRAG", 20).has_value());
     CHECK(plain.readNormVector("VC", 1, "FRAG", 20).has_value());
     CHECK(plain.readNormVector("KR", 1, "BP", 50000).has_value());

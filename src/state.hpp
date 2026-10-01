@@ -1,5 +1,5 @@
-#ifndef HICFILECPP_DETAIL_STATE_HPP
-#define HICFILECPP_DETAIL_STATE_HPP
+#ifndef HICCPP_DETAIL_STATE_HPP
+#define HICCPP_DETAIL_STATE_HPP
 
 // The parsed index of an open .hic file and of one MatrixZoomData query,
 // shared by the reader and by addNorm.
@@ -11,10 +11,10 @@
 #include <utility>
 #include <vector>
 
-#include "hicfilecpp/hicfile.hpp"
+#include "hiccpp/hicfile.hpp"
 #include "io.hpp"
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 struct VectorLocation {
     int64_t valuesOffset = 0;
@@ -92,6 +92,6 @@ struct ZoomState {
     double avgCount = 0.0;
 };
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail
 
-#endif  // HICFILECPP_DETAIL_STATE_HPP
+#endif  // HICCPP_DETAIL_STATE_HPP

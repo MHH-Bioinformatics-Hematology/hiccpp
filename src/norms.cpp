@@ -5,7 +5,7 @@
 #include <limits>
 #include <optional>
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 namespace {
 
@@ -725,4 +725,4 @@ template void addDistancesFromRecords(ExpectedValueCalculation&, int32_t, const 
 template void addDistancesFromRecords(ExpectedValueCalculation&, int32_t, const std::vector<NormRecord>&,
                                       const std::vector<float>&);
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail

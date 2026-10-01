@@ -10,30 +10,30 @@ FetchContent_Declare(doctest
     SOURCE_SUBDIR do-not-add)
 FetchContent_MakeAvailable(doctest)
 
-add_library(hicfilecpp_doctest INTERFACE)
-target_include_directories(hicfilecpp_doctest SYSTEM INTERFACE "${doctest_SOURCE_DIR}")
+add_library(hiccpp_doctest INTERFACE)
+target_include_directories(hiccpp_doctest SYSTEM INTERFACE "${doctest_SOURCE_DIR}")
 
-add_executable(hicfilecpp_tests
+add_executable(hiccpp_tests
     test_main.cpp
     test_reader.cpp
     test_writer.cpp)
-target_link_libraries(hicfilecpp_tests PRIVATE hicfilecpp::hicfilecpp hicfilecpp_doctest)
+target_link_libraries(hiccpp_tests PRIVATE hiccpp::hiccpp hiccpp_doctest)
 # Tests read the tracked data files and write into the build tree's scratch
 # directory; both paths are passed in, never derived from the working directory.
-target_compile_definitions(hicfilecpp_tests PRIVATE
-    HICFILECPP_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data"
-    HICFILECPP_TEST_SCRATCH="${CMAKE_CURRENT_BINARY_DIR}/scratch")
+target_compile_definitions(hiccpp_tests PRIVATE
+    HICCPP_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data"
+    HICCPP_TEST_SCRATCH="${CMAKE_CURRENT_BINARY_DIR}/scratch")
 
-add_test(NAME hicfilecpp_unit_tests COMMAND hicfilecpp_tests)
+add_test(NAME hiccpp_unit_tests COMMAND hiccpp_tests)
 
-# A downstream project consumes hicfilecpp through find_package on an installed
+# A downstream project consumes hiccpp through find_package on an installed
 # tree and through FetchContent on the source tree.
-add_test(NAME hicfilecpp_consumer
+add_test(NAME hiccpp_consumer
     COMMAND ${CMAKE_COMMAND}
         -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
         -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/consumer
         -DPREFIX_PATH=${CMAKE_PREFIX_PATH}
         -DGENERATOR=${CMAKE_GENERATOR}
-        -DEXPECTED_VERSION=${hicfilecpp_VERSION_MAJOR}.${hicfilecpp_VERSION_MINOR}
+        -DEXPECTED_VERSION=${hiccpp_VERSION_MAJOR}.${hiccpp_VERSION_MINOR}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/consumer/run_consumer.cmake)
-set_tests_properties(hicfilecpp_consumer PROPERTIES TIMEOUT 900)
+set_tests_properties(hiccpp_consumer PROPERTIES TIMEOUT 900)

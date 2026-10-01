@@ -1,25 +1,25 @@
 # hicstraw to C++ API mapping
 
-hicfilecpp reproduces the reading API of hicstraw 1.3.1 and the writing of
+hiccpp reproduces the reading API of hicstraw 1.3.1 and the writing of
 Juicer tools pre and addNorm (1.22.01 for version 8, 2.20.00 for version 9).
 Names, parameters and semantics follow those programs; the spelling follows
 C++.
 
 Conventions:
 
-- `import hicstraw` corresponds to `#include <hicfilecpp/hicfilecpp.hpp>` and
-  the namespace `hicfilecpp`.
+- `import hicstraw` corresponds to `#include <hiccpp/hiccpp.hpp>` and
+  the namespace `hiccpp`.
 - A numpy array of floats is a `std::vector<double>`; the float32 matrix of
   `getRecordsAsMatrix` is a `FloatMatrix` (row major, `rows`, `cols`,
   `values`).
-- Where hicstraw prints a message and returns nothing, hicfilecpp returns the
+- Where hicstraw prints a message and returns nothing, hiccpp returns the
   same nothing and keeps the message (`MatrixZoomData::message()`). Where
-  hicstraw's behaviour is undefined, hicfilecpp throws `HicError`
+  hicstraw's behaviour is undefined, hiccpp throws `HicError`
   (see DEVIATIONS.md).
 
 ## Reading
 
-| Python (hicstraw 1.3.1) | C++ (hicfilecpp) |
+| Python (hicstraw 1.3.1) | C++ (hiccpp) |
 |---|---|
 | `hicstraw.HiCFile(path)` | `HiCFile(const std::string& path)` |
 | `f.getGenomeID()` | `std::string HiCFile::getGenomeID()` |
@@ -56,11 +56,11 @@ any normalization the file holds (`"VC"`, `"VC_SQRT"`, `"KR"`, `"SCALE"`,
 | `MatrixZoomData::zoomHeader()`, `blockIndex()`, `readBlock(entry)` | the zoom header and blocks, records in bins |
 | `MatrixZoomData::forEachBlock(visit, threads)` | every block in ascending number, decoded on several threads |
 
-Errors are `hicfilecpp::HicError`, derived from `std::runtime_error`.
+Errors are `hiccpp::HicError`, derived from `std::runtime_error`.
 
 ## Writing
 
-| Juicer tools | C++ (hicfilecpp) |
+| Juicer tools | C++ (hiccpp) |
 |---|---|
 | `pre [options] <infile> <outfile> <genomeID>` | `writeHicFile(outfile, WriteOptions{.genomeId = genomeID, .chromosomes = ...}, source)` |
 | `<infile>` contacts, "short with score" | a `PixelSource`: pixels of one chromosome pair at `sourceResolution`, each counting as one contact at the start of its bins |

@@ -1,4 +1,4 @@
-"""Writer cases of the hicfilecpp harness, run from run.py.
+"""Writer cases of the hiccpp harness, run from run.py.
 
 A write case names a source (.hic or fixed-bin .cool), its resolution, a
 .hic version, resolutions and normalizations. The runner
@@ -6,15 +6,15 @@ A write case names a source (.hic or fixed-bin .cool), its resolution, a
 1. turns the source into the same contacts for both writers (writer_io.py prep);
 2. runs Juicer tools pre on them (1.22.01 for version 8, 2.20.00 for
    version 9) with the case's resolutions and normalizations: the reference;
-3. runs hicfilecpp-harness write on them (with via_addnorm, writing without
+3. runs hiccpp-harness write on them (with via_addnorm, writing without
    normalizations and then running addNorm), measured against the reference:
-   hicfilecpp may not use more CPU time;
+   hiccpp may not use more CPU time;
 4. writes the file twice more, on 1 thread and again on the case's threads,
    and requires identical bytes;
 5. reads both files back through hicstraw (writer_io.py check): observed
    records at every resolution against Juicer's and, at the source resolution,
    against the source; normalization vectors and expected values to the ED gate;
-6. reads the hicfilecpp file back through hic2cool 1.0.1 (version 8) and
+6. reads the hiccpp file back through hic2cool 1.0.1 (version 8) and
    through Juicer tools dump, and requires the source pixels exactly.
 """
 
@@ -107,7 +107,7 @@ def run_write_case(case, args, resolver, out_root, run_measured):
     candidate = os.path.join(work, "cpp", "out.hic")
     record["cpp"] = write(threads, candidate, "cpp")
     if record["cpp"]["exit"] != 0 or not os.path.exists(candidate):
-        return fail(f"hicfilecpp write failed with exit status {record['cpp']['exit']}")
+        return fail(f"hiccpp write failed with exit status {record['cpp']['exit']}")
     record["py"]["op_s"] = record["py"]["wall_s"]
     record["cpp"]["op_s"] = _load(os.path.join(work, "cpp", "result.json"))["op_seconds"]
 
@@ -185,7 +185,7 @@ def run_write_case(case, args, resolver, out_root, run_measured):
     record["cpu_gate"] = record["cpp"]["cpu_s"] <= record["py"]["cpu_s"]
     if not record["cpu_gate"]:
         record["problems"].append(
-            f"CPU gate: hicfilecpp {record['cpp']['cpu_s']:.3f} s > Juicer tools {record['py']['cpu_s']:.3f} s")
+            f"CPU gate: hiccpp {record['cpp']['cpu_s']:.3f} s > Juicer tools {record['py']['cpu_s']:.3f} s")
     record["rss_gate"] = True
     record["verdict"] = "PASS" if not record["problems"] else "FAIL"
     return record

@@ -1,7 +1,7 @@
-"""Comparators of the hicfilecpp harness.
+"""Comparators of the hiccpp harness.
 
 compare_results(py, cpp, py_dir, cpp_dir) compares the result documents and
-arrays that oracle.py and hicfilecpp-harness write for the same case. Contact
+arrays that oracle.py and hiccpp-harness write for the same case. Contact
 records and matrices must be identical, bit for bit. Vectors are classified by
 their worst relative difference and must reach the ED gate (three significant
 digits, rel <= 1e-3).
@@ -88,7 +88,7 @@ def compare_results(py, cpp, py_dir, cpp_dir, cmp=None):
     cmp = cmp or Comparison()
     if py.get("kind") != cpp.get("kind"):
         cmp.fail("kind", f"hicstraw {py.get('kind')} ({py.get('message', '')}) vs "
-                         f"hicfilecpp {cpp.get('kind')} ({cpp.get('message', '')})")
+                         f"hiccpp {cpp.get('kind')} ({cpp.get('message', '')})")
         return cmp
     kind = py["kind"]
     if kind == "error":

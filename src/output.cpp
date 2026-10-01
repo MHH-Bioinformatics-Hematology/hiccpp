@@ -8,9 +8,9 @@
 #include <cerrno>
 #include <cstring>
 
-#include "hicfilecpp/errors.hpp"
+#include "hiccpp/errors.hpp"
 
-namespace hicfilecpp::detail {
+namespace hiccpp::detail {
 
 namespace {
 
@@ -191,4 +191,4 @@ void ThreadPool::parallelFor(size_t n, const std::function<void(size_t)>& fn) {
     }
 }
 
-}  // namespace hicfilecpp::detail
+}  // namespace hiccpp::detail
