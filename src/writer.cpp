@@ -50,8 +50,10 @@ struct Layout {
     int32_t version = 9;
 };
 
-// MatrixPP.getNumColumnsFromNumBins
-int32_t numColumns(int32_t version, int32_t nBins, int32_t binSize, bool intra) {
+// MatrixPP.getNumColumnsFromNumBins. The cutoff is 0 for a fragment zoom,
+// which is how MatrixPP calls it there, so the version 9 column widening of
+// fine base pair zooms never applies to fragment resolutions.
+int32_t numColumns(int32_t version, int32_t nBins, int32_t binSize, int32_t cutoff) {
     int32_t nColumns = nBins / kBlockSize + 1;
     if (version == 8) {
         if (nColumns > std::sqrt(static_cast<double>(INT32_MAX))) {
@@ -59,7 +61,6 @@ int32_t numColumns(int32_t version, int32_t nBins, int32_t binSize, bool intra) 
         }
         return nColumns;
     }
-    const int32_t cutoff = intra ? 500 : 5000;
     if (binSize < cutoff) {
         const int64_t numerator = static_cast<int64_t>(nBins) * binSize;
         const int64_t denominator = static_cast<int64_t>(kBlockSize) * cutoff;
@@ -68,15 +69,19 @@ int32_t numColumns(int32_t version, int32_t nBins, int32_t binSize, bool intra) 
     return std::min(nColumns, kMaxSqrt - 1);
 }
 
-// The MatrixPP and MatrixZoomDataPP constructors.
-Layout pairLayout(int32_t version, int64_t length1, int64_t length2, int32_t binSize, bool intra) {
+// The MatrixPP and MatrixZoomDataPP constructors. For a fragment zoom
+// `extent` is the chromosome's site count (MatrixPP takes
+// FragmentCalculation.getNumberFragments where it takes the length for a base
+// pair zoom) and the cutoff is 0.
+Layout pairLayout(int32_t version, int64_t extent1, int64_t extent2, int32_t binSize, bool intra, bool frag) {
     Layout layout;
     layout.binSize = binSize;
     layout.intra = intra;
     layout.version = version;
-    const int64_t length = std::max(length1, length2);
-    const auto nBins = static_cast<int32_t>(length / binSize + 1);
-    layout.blockColumnCount = numColumns(version, nBins, binSize, intra);
+    const int64_t extent = std::max(extent1, extent2);
+    const auto nBins = static_cast<int32_t>(extent / binSize + 1);
+    const int32_t cutoff = frag ? 0 : (intra ? 500 : 5000);
+    layout.blockColumnCount = numColumns(version, nBins, binSize, cutoff);
     layout.blockBinCount = nBins / layout.blockColumnCount + 1;
     return layout;
 }
@@ -304,6 +309,7 @@ std::vector<BlockIndexEntry> writeBlocks(OutputFile& out, ThreadPool& pool, int3
 }
 
 struct ZoomWritten {
+    std::string unit = "BP";
     int32_t zoomIndex = 0;
     double sum = 0;
     Layout layout;
@@ -319,7 +325,7 @@ MatrixEntry writeMatrixHeader(OutputFile& out, int32_t chr1, int32_t chr2, const
     m.put<int32_t>(chr2);
     m.put<int32_t>(static_cast<int32_t>(zooms.size()));
     for (const auto& zoom : zooms) {
-        m.cstr("BP");
+        m.cstr(zoom.unit);
         m.put<int32_t>(zoom.zoomIndex);
         m.put<float>(static_cast<float>(zoom.sum));
         m.put<float>(0.0f);
@@ -361,7 +367,7 @@ void putExpected(ByteWriter& w, int32_t version, ExpectedValueCalculation& ev, b
     if (withType) {
         w.cstr(ev.type());
     }
-    w.cstr("BP");
+    w.cstr(ev.unit());
     w.put<int32_t>(ev.gridSize());
     putValues(w, version, ev.densityAvg());
     w.put<int32_t>(static_cast<int32_t>(ev.chrScaleFactors().size()));
@@ -391,15 +397,23 @@ void validateNormalizations(const std::vector<std::string>& normalizations) {
 // resolution and the normalized expected values they give.
 class NormBuilder {
 public:
-    NormBuilder(int32_t version, std::vector<int64_t> lengths, std::vector<int32_t> resolutions,
-                const std::vector<std::string>& requested, std::vector<std::string> provided = {},
-                std::function<std::vector<double>(const std::string&, int32_t, int32_t)> provider = {})
-        : version_(version),
-          lengths_(std::move(lengths)),
-          resolutions_(std::move(resolutions)),
-          names_(kNormOrder),
-          provided_(std::move(provided)),
-          provider_(std::move(provider)) {
+    using Provider = std::function<std::vector<double>(const std::string&, int32_t, int32_t)>;
+    // One zoom level of the file, in the order Juicer's
+    // Dataset.getAllPossibleResolutions returns them: every base pair zoom,
+    // then every fragment zoom. `lengths` are the chromosome lengths for a
+    // base pair zoom and the fragment counts the file holds (the site counts,
+    // which is what DatasetReaderV2 puts in the fragmentCountMap) for a
+    // fragment one.
+    struct Zoom {
+        std::string unit = "BP";
+        int32_t resolution = 0;
+        std::vector<int64_t> lengths;
+        Provider provider;
+    };
+
+    NormBuilder(int32_t version, std::vector<Zoom> zooms, const std::vector<std::string>& requested,
+                std::vector<std::string> provided = {})
+        : version_(version), zooms_(std::move(zooms)), names_(kNormOrder), provided_(std::move(provided)) {
         for (const auto& type : kNormOrder) {
             if (std::find(requested.begin(), requested.end(), type) != requested.end()) {
                 types_.push_back(type);
@@ -415,20 +429,22 @@ public:
 
     bool active() const { return !types_.empty() || !provided_.empty(); }
 
-    // vectorLength is the bin count of the matrix's grid axis, which Juicer
-    // takes from the zoom level's block layout (MatrixZoomData: blockBinCount
-    // times blockColumnCount), not from the chromosome length.
-    void addChromosome(int32_t chrIndex, int32_t resolution, const std::vector<NormRecord>& records,
+    // vectorLength is the bin count of the matrix's grid axis. For a base pair
+    // zoom Juicer takes it from the block layout (MatrixZoomData:
+    // blockBinCount times blockColumnCount), not from the chromosome length;
+    // for a fragment zoom the axis is a HiCFragmentAxis, whose bin count is
+    // the chromosome's site count divided by the resolution plus one.
+    void addChromosome(int32_t chrIndex, int32_t zoom, const std::vector<NormRecord>& records,
                        int64_t vectorLength) {
         if (records.empty() || !active()) {
             return;
         }
         if (version_ > 8) {
-            compute<float>(chrIndex, resolution, records, vectorLength);
-            provide<float>(chrIndex, resolution, records, vectorLength);
+            compute<float>(chrIndex, zoom, records, vectorLength);
+            provide<float>(chrIndex, zoom, records, vectorLength);
         } else {
-            compute<double>(chrIndex, resolution, records, vectorLength);
-            provide<double>(chrIndex, resolution, records, vectorLength);
+            compute<double>(chrIndex, zoom, records, vectorLength);
+            provide<double>(chrIndex, zoom, records, vectorLength);
         }
     }
 
@@ -453,8 +469,9 @@ public:
         const int64_t indexPosition = out.position();
         int64_t indexSize = 4;
         for (const auto& v : vectors_) {
-            indexSize += static_cast<int64_t>(names_[static_cast<size_t>(v.typeOrder)].size()) + 1 + 4 + 3 + 4 +
-                         8 + (version_ > 8 ? 8 : 4);
+            indexSize += static_cast<int64_t>(names_[static_cast<size_t>(v.typeOrder)].size()) + 1 + 4 +
+                         static_cast<int64_t>(zooms_[static_cast<size_t>(v.zoomOrder)].unit.size()) + 1 + 4 + 8 +
+                         (version_ > 8 ? 8 : 4);
         }
         ByteWriter index;
         index.put<int32_t>(static_cast<int32_t>(vectors_.size()));
@@ -464,8 +481,8 @@ public:
             const int64_t size = version_ > 8 ? 8 + 4 * n : 4 + 8 * n;
             index.cstr(names_[static_cast<size_t>(v.typeOrder)]);
             index.put<int32_t>(v.chr);
-            index.cstr("BP");
-            index.put<int32_t>(v.resolution);
+            index.cstr(zooms_[static_cast<size_t>(v.zoomOrder)].unit);
+            index.put<int32_t>(zooms_[static_cast<size_t>(v.zoomOrder)].resolution);
             index.put<int64_t>(position);
             if (version_ > 8) {
                 index.put<int64_t>(size);
@@ -488,31 +505,27 @@ private:
         int32_t zoomOrder = 0;
         int32_t chr = 0;
         int32_t typeOrder = 0;
-        int32_t resolution = 0;
         std::vector<double> values;
     };
 
-    int32_t zoomOrder(int32_t resolution) const {
-        return static_cast<int32_t>(std::find(resolutions_.begin(), resolutions_.end(), resolution) -
-                                    resolutions_.begin());
-    }
     int32_t typeOrder(const std::string& type) const {
         return static_cast<int32_t>(std::find(names_.begin(), names_.end(), type) - names_.begin());
     }
     bool wants(const std::string& type) const {
         return std::find(types_.begin(), types_.end(), type) != types_.end();
     }
-    ExpectedValueCalculation& expected(int32_t resolution, const std::string& type) {
-        const auto key = std::make_pair(zoomOrder(resolution), typeOrder(type));
+    ExpectedValueCalculation& expected(int32_t zoom, const std::string& type) {
+        const auto key = std::make_pair(zoom, typeOrder(type));
         auto it = expected_.find(key);
         if (it == expected_.end()) {
-            it = expected_.emplace(key, ExpectedValueCalculation(lengths_, resolution, type)).first;
+            const Zoom& z = zooms_[static_cast<size_t>(zoom)];
+            it = expected_.emplace(key, ExpectedValueCalculation(z.lengths, z.resolution, type, z.unit)).first;
         }
         return it->second;
     }
 
     template <class T>
-    void compute(int32_t chr, int32_t resolution, const std::vector<NormRecord>& records, int64_t size) {
+    void compute(int32_t chr, int32_t zoom, const std::vector<NormRecord>& records, int64_t size) {
         const bool vc = wants("VC");
         const bool vcSqrt = wants("VC_SQRT");
         if (vc || vcSqrt) {
@@ -524,19 +537,19 @@ private:
                 }
             }
             if (vc) {
-                update<T>(chr, resolution, "VC", std::move(values), records);
+                update<T>(chr, zoom, "VC", std::move(values), records);
             }
             if (vcSqrt) {
-                update<T>(chr, resolution, "VC_SQRT", std::move(roots), records);
+                update<T>(chr, zoom, "VC_SQRT", std::move(roots), records);
             }
         }
         if (wants("KR")) {
-            update<T>(chr, resolution, "KR", computeKR<T>(records, size, version_ > 8), records);
+            update<T>(chr, zoom, "KR", computeKR<T>(records, size, version_ > 8), records);
         }
         if (wants("SCALE")) {
             std::vector<T> scale = computeScale<T>(records, size);
             if (!scale.empty()) {
-                update<T>(chr, resolution, "SCALE", std::move(scale), records);
+                update<T>(chr, zoom, "SCALE", std::move(scale), records);
             }
         }
     }
@@ -544,9 +557,13 @@ private:
     // The caller's vectors, stored as given (writeHicFile's chromosome indexes
     // start at 1 for the whole-genome pseudo-chromosome; the caller's at 0).
     template <class T>
-    void provide(int32_t chr, int32_t resolution, const std::vector<NormRecord>& records, int64_t size) {
+    void provide(int32_t chr, int32_t zoom, const std::vector<NormRecord>& records, int64_t size) {
+        const Zoom& z = zooms_[static_cast<size_t>(zoom)];
+        if (!z.provider) {
+            return;
+        }
         for (const auto& name : provided_) {
-            const std::vector<double> given = provider_(name, chr - 1, resolution);
+            const std::vector<double> given = z.provider(name, chr - 1, z.resolution);
             if (given.empty()) {
                 continue;
             }
@@ -559,41 +576,38 @@ private:
             for (size_t i = 0; i < n; ++i) {
                 vector[i] = static_cast<T>(given[i]);
             }
-            store<T>(chr, resolution, name, std::move(vector), records);
+            store<T>(chr, zoom, name, std::move(vector), records);
         }
     }
 
     // NormalizationVectorUpdater.updateExpectedValueCalculationForChr
     template <class T>
-    void update(int32_t chr, int32_t resolution, const std::string& type, std::vector<T> vector,
+    void update(int32_t chr, int32_t zoom, const std::string& type, std::vector<T> vector,
                 const std::vector<NormRecord>& records) {
         const double factor = sumFactor(records, vector);
         for (auto& value : vector) {
             value = static_cast<T>(value * factor);
         }
-        store<T>(chr, resolution, type, std::move(vector), records);
+        store<T>(chr, zoom, type, std::move(vector), records);
     }
 
     template <class T>
-    void store(int32_t chr, int32_t resolution, const std::string& type, std::vector<T> vector,
+    void store(int32_t chr, int32_t zoom, const std::string& type, std::vector<T> vector,
                const std::vector<NormRecord>& records) {
-        addDistancesFromRecords(expected(resolution, type), chr, records, vector);
+        addDistancesFromRecords(expected(zoom, type), chr, records, vector);
         StoredVector stored;
-        stored.zoomOrder = zoomOrder(resolution);
+        stored.zoomOrder = zoom;
         stored.chr = chr;
         stored.typeOrder = typeOrder(type);
-        stored.resolution = resolution;
         stored.values.assign(vector.begin(), vector.end());
         vectors_.push_back(std::move(stored));
     }
 
     int32_t version_;
-    std::vector<int64_t> lengths_;
-    std::vector<int32_t> resolutions_;
+    std::vector<Zoom> zooms_;
     std::vector<std::string> types_;
     std::vector<std::string> names_;
     std::vector<std::string> provided_;
-    std::function<std::vector<double>(const std::string&, int32_t, int32_t)> provider_;
     std::map<std::pair<int32_t, int32_t>, ExpectedValueCalculation> expected_;
     std::vector<StoredVector> vectors_;
 };
@@ -634,6 +648,30 @@ void validate(const WriteOptions& options) {
             throw HicError("resolutions must be positive and distinct");
         }
     }
+    std::set<int32_t> fragResolutions;
+    for (const int32_t resolution : options.fragResolutions) {
+        if (resolution <= 0 || !fragResolutions.insert(resolution).second) {
+            throw HicError("fragResolutions must be positive and distinct");
+        }
+    }
+    if (!options.fragResolutions.empty()) {
+        if (options.fragmentSites.size() != options.chromosomes.size()) {
+            throw HicError("fragmentSites holds " + std::to_string(options.fragmentSites.size()) +
+                           " entries but there are " + std::to_string(options.chromosomes.size()) +
+                           " chromosomes; fragResolutions needs one site list per chromosome");
+        }
+        for (size_t i = 0; i < options.fragmentSites.size(); ++i) {
+            const auto& sites = options.fragmentSites[i];
+            for (size_t k = 0; k < sites.size(); ++k) {
+                if (sites[k] < 0 || (k > 0 && sites[k] < sites[k - 1])) {
+                    throw HicError("the restriction sites of " + options.chromosomes[i].first +
+                                   " must be non-negative and in ascending order");
+                }
+            }
+        }
+    } else if (!options.fragmentSites.empty()) {
+        throw HicError("fragmentSites is given without fragResolutions");
+    }
     if (!options.sourceProvidesEveryResolution) {
         if (options.sourceResolution <= 0) {
             throw HicError("sourceResolution must be positive");
@@ -642,6 +680,18 @@ void validate(const WriteOptions& options) {
             if (resolution % options.sourceResolution != 0) {
                 throw HicError("resolution " + std::to_string(resolution) + " is not a multiple of the source resolution " +
                                std::to_string(options.sourceResolution));
+            }
+        }
+        if (!options.fragResolutions.empty()) {
+            if (options.sourceFragResolution <= 0) {
+                throw HicError("sourceFragResolution must be positive");
+            }
+            for (const int32_t resolution : options.fragResolutions) {
+                if (resolution % options.sourceFragResolution != 0) {
+                    throw HicError("fragment resolution " + std::to_string(resolution) +
+                                   " is not a multiple of the source fragment resolution " +
+                                   std::to_string(options.sourceFragResolution));
+                }
             }
         }
     }
@@ -681,6 +731,11 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
     const int32_t version = options.version;
     std::vector<int32_t> resolutions = options.resolutions;
     std::sort(resolutions.begin(), resolutions.end(), std::greater<>());
+    // Preprocessor.setResolutions sorts the fragment resolutions of -r
+    // descending as well, and writes them after the base pair ones.
+    std::vector<int32_t> fragResolutions = options.fragResolutions;
+    std::sort(fragResolutions.begin(), fragResolutions.end(), std::greater<>());
+    const bool frag = !fragResolutions.empty();
     const auto nChromosomes = static_cast<int32_t>(options.chromosomes.size());
 
     std::vector<int64_t> lengths(static_cast<size_t>(nChromosomes) + 1);
@@ -693,6 +748,22 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
     }
     const auto genomeLengthKb = static_cast<int32_t>(genomeLength / 1000);
     lengths[0] = genomeLengthKb;
+
+    // The site count of each chromosome, "All" first with none, as the header
+    // stores them. The matrix layout and the normalization vectors count
+    // fragments with this (FragmentCalculation.getNumberFragments), while the
+    // raw expected values count them with one more: Preprocessor builds its
+    // fragmentCountMap from sites.length + 1, and DatasetReaderV2, which the
+    // normalization step reads the file back with, from sites.length.
+    std::vector<int64_t> siteCounts(static_cast<size_t>(nChromosomes) + 1, 0);
+    std::vector<int64_t> siteCountsPlusOne(static_cast<size_t>(nChromosomes) + 1, 0);
+    if (frag) {
+        for (int32_t i = 0; i < nChromosomes; ++i) {
+            const auto count = static_cast<int64_t>(options.fragmentSites[static_cast<size_t>(i)].size());
+            siteCounts[static_cast<size_t>(i) + 1] = count;
+            siteCountsPlusOne[static_cast<size_t>(i) + 1] = count + 1;
+        }
+    }
 
     OutputFile out(path, std::nullopt);
     ByteWriter header;
@@ -732,16 +803,47 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
     for (const int32_t resolution : resolutions) {
         header.put<int32_t>(resolution);
     }
-    header.put<int32_t>(0);
+    // Preprocessor.writeHeader: the fragment resolutions, then the restriction
+    // sites of every chromosome in header order, "All" included with none.
+    header.put<int32_t>(static_cast<int32_t>(fragResolutions.size()));
+    for (const int32_t resolution : fragResolutions) {
+        header.put<int32_t>(resolution);
+    }
+    if (frag) {
+        header.put<int32_t>(0);  // "All" is absent from the sites file
+        for (const auto& sites : options.fragmentSites) {
+            header.put<int32_t>(static_cast<int32_t>(sites.size()));
+            for (const int32_t site : sites) {
+                header.put<int32_t>(site);
+            }
+        }
+    }
     out.write(header);
 
     ThreadPool pool(options.threads);
-    std::vector<ExpectedValueCalculation> expectedNone;
-    for (const int32_t resolution : resolutions) {
-        expectedNone.emplace_back(lengths, resolution, "NONE");
+    // The zoom levels of the file, in the order Juicer holds them: every base
+    // pair resolution, then every fragment resolution.
+    struct ZoomSpec {
+        std::string unit;
+        int32_t resolution = 0;
+        int32_t zoomIndex = 0;
+        bool frag = false;
+    };
+    std::vector<ZoomSpec> zoomSpecs;
+    for (size_t z = 0; z < resolutions.size(); ++z) {
+        zoomSpecs.push_back(ZoomSpec{"BP", resolutions[z], static_cast<int32_t>(z), false});
     }
-    NormBuilder norms(version, lengths, resolutions, options.normalizations, options.providedNormalizations,
-                      options.normVector);
+    for (size_t z = 0; z < fragResolutions.size(); ++z) {
+        zoomSpecs.push_back(ZoomSpec{"FRAG", fragResolutions[z], static_cast<int32_t>(z), true});
+    }
+    std::vector<ExpectedValueCalculation> expectedNone;
+    std::vector<NormBuilder::Zoom> normZooms;
+    for (const auto& spec : zoomSpecs) {
+        expectedNone.emplace_back(spec.frag ? siteCountsPlusOne : lengths, spec.resolution, "NONE", spec.unit);
+        normZooms.push_back(NormBuilder::Zoom{spec.unit, spec.resolution, spec.frag ? siteCounts : lengths,
+                                             spec.frag ? options.fragNormVector : options.normVector});
+    }
+    NormBuilder norms(version, normZooms, options.normalizations, options.providedNormalizations);
 
     const Layout wholeLayout = wholeGenomeLayout(version, genomeLengthKb);
     const int64_t wholeBins = genomeLengthKb / wholeLayout.binSize + 1;
@@ -758,23 +860,36 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
             const int64_t length1 = lengths[static_cast<size_t>(c1) + 1];
             const int64_t length2 = lengths[static_cast<size_t>(c2) + 1];
             std::vector<ZoomWritten> zooms;
-            for (size_t z = 0; z < resolutions.size(); ++z) {
-                const int32_t resolution = resolutions[z];
-                const int32_t request =
-                    options.sourceProvidesEveryResolution ? resolution : options.sourceResolution;
-                const Layout layout = pairLayout(version, length1, length2, resolution, intra);
-                const bool wholeGenomePass = z + 1 == resolutions.size();
+            for (size_t z = 0; z < zoomSpecs.size(); ++z) {
+                const ZoomSpec& spec = zoomSpecs[z];
+                const int32_t resolution = spec.resolution;
+                const int32_t sourceStep = spec.frag ? options.sourceFragResolution : options.sourceResolution;
+                const int32_t request = options.sourceProvidesEveryResolution ? resolution : sourceStep;
+                // A fragment zoom takes the site counts where a base pair one
+                // takes the chromosome lengths (MatrixPP's fragment branch).
+                const int64_t extent1 = spec.frag ? siteCounts[static_cast<size_t>(c1) + 1] : length1;
+                const int64_t extent2 = spec.frag ? siteCounts[static_cast<size_t>(c2) + 1] : length2;
+                const Layout layout = pairLayout(version, extent1, extent2, resolution, intra, spec.frag);
+                // The whole-genome matrix is a base pair matrix, so it is
+                // filled on the finest base pair pass.
+                const bool wholeGenomePass = !spec.frag && z + 1 == resolutions.size();
+                const bool firstOfUnit = spec.frag ? z == resolutions.size() : z == 0;
                 ExpectedValueCalculation& ev = expectedNone[z];
                 entries.clear();
                 double sum = 0;
-                source.pixels(request, c1, c2, [&](const Pixel* pixels, size_t count) {
+                const auto consume = [&](const Pixel* pixels, size_t count) {
                     for (size_t k = 0; k < count; ++k) {
                         const Pixel& p = pixels[k];
                         const int64_t pos1 = static_cast<int64_t>(p.bin1) * request;
                         const int64_t pos2 = static_cast<int64_t>(p.bin2) * request;
-                        if (p.bin1 < 0 || p.bin2 < 0 || pos1 >= length1 || pos2 >= length2) {
+                        // A fragment number may equal the site count: the
+                        // position past the last site lies on one fragment more.
+                        const bool outside = spec.frag ? pos1 > extent1 || pos2 > extent2
+                                                       : pos1 >= extent1 || pos2 >= extent2;
+                        if (p.bin1 < 0 || p.bin2 < 0 || outside) {
                             throw HicError("pixel (" + std::to_string(p.bin1) + ", " + std::to_string(p.bin2) +
-                                           ") at " + std::to_string(request) + " bp lies outside chromosomes " +
+                                           ") at " + std::to_string(request) + " " + spec.unit +
+                                           " lies outside chromosomes " +
                                            options.chromosomes[static_cast<size_t>(c1)].first + " and " +
                                            options.chromosomes[static_cast<size_t>(c2)].first);
                         }
@@ -817,27 +932,42 @@ void writeHicFile(const std::string& path, const WriteOptions& options, PixelSou
                             }
                         }
                     }
-                });
+                };
+                if (spec.frag) {
+                    source.fragPixels(request, c1, c2, consume);
+                } else {
+                    source.pixels(request, c1, c2, consume);
+                }
                 if (entries.empty()) {
-                    if (z == 0) {
-                        break;
+                    if (firstOfUnit) {
+                        // No pixels of this unit for the pair: skip its zooms,
+                        // as Juicer writes no matrix for a pair without
+                        // contacts.
+                        z = spec.frag ? zoomSpecs.size() : resolutions.size() - 1;
+                        continue;
                     }
                     throw HicError("the source gave pixels for " + options.chromosomes[static_cast<size_t>(c1)].first +
                                    " and " + options.chromosomes[static_cast<size_t>(c2)].first +
-                                   " at some resolutions only");
+                                   " at some " + spec.unit + " resolutions only");
                 }
                 const bool keep = intra && norms.active();
                 records.clear();
                 ZoomWritten zoom;
-                zoom.zoomIndex = static_cast<int32_t>(z);
+                zoom.unit = spec.unit;
+                zoom.zoomIndex = spec.zoomIndex;
                 zoom.sum = sum;
                 zoom.layout = layout;
                 zoom.index = writeBlocks(out, pool, version, options.compressionLevel, entries,
                                          keep ? &records : nullptr);
                 zooms.push_back(std::move(zoom));
                 if (keep) {
-                    norms.addChromosome(c1 + 1, resolution, records,
-                                        static_cast<int64_t>(layout.blockBinCount) * layout.blockColumnCount);
+                    // The grid axis a normalization vector spans: the block
+                    // layout for a base pair zoom, the fragment axis, one bin
+                    // per resolution fragments, for a fragment one.
+                    const int64_t vectorLength =
+                        spec.frag ? siteCounts[static_cast<size_t>(c1) + 1] / resolution + 1
+                                  : static_cast<int64_t>(layout.blockBinCount) * layout.blockColumnCount;
+                    norms.addChromosome(c1 + 1, static_cast<int32_t>(z), records, vectorLength);
                 }
             }
             if (!zooms.empty()) {
@@ -926,8 +1056,13 @@ void addNorm(const std::string& path, const std::vector<std::string>& normalizat
         for (const auto& chromosome : state.chromosomes) {
             lengths.push_back(chromosome.length);
         }
-        builder.emplace(version, lengths, state.bpResolutions, normalizations);
+        std::vector<NormBuilder::Zoom> zooms;
         for (const int32_t resolution : state.bpResolutions) {
+            zooms.push_back(NormBuilder::Zoom{"BP", resolution, lengths, {}});
+        }
+        builder.emplace(version, zooms, normalizations);
+        for (size_t z = 0; z < state.bpResolutions.size(); ++z) {
+            const int32_t resolution = state.bpResolutions[z];
             for (size_t chr = 1; chr < state.chromosomes.size(); ++chr) {
                 const auto index = static_cast<int32_t>(chr);
                 const auto headers = file.matrixZoomHeaders(index, index);
@@ -947,7 +1082,7 @@ void addNorm(const std::string& path, const std::vector<std::string>& normalizat
                         }
                     },
                     threads);
-                builder->addChromosome(index, resolution, records,
+                builder->addChromosome(index, static_cast<int32_t>(z), records,
                                        static_cast<int64_t>(header->blockBinCount) * header->blockColumnCount);
             }
         }

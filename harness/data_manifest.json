@@ -15,6 +15,10 @@
   "sha256": "9f22714b62d147a7849a42594573aa0960d32f2196dbb601ba54f8d6271d1860",
   "size": 1638900
  },
+ "@data/SRR1791297_30.juicer_tools_2.20.00.frag.v9.hic": {
+  "sha256": "ea2d99c78b67c677d8994b15c59065f6b45dfde2c99c06624de46f4a91c15b9e",
+  "size": 665026
+ },
  "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic": {
   "sha256": "2a550ce0deca5e97dfb025f15f5cd6c3aed18579225f4c7c74f0b2a1b8a4a028",
   "size": 1794416

@@ -55,6 +55,7 @@ struct FileState {
     std::vector<int32_t> bpResolutions;
     std::vector<int32_t> fragResolutions;
     std::vector<int32_t> fragmentSiteCounts;
+    std::vector<std::vector<int32_t>> fragmentSites;
     std::map<std::string, MatrixEntry> matrices;
     std::vector<ExpectedEntry> expectedNone;
     std::vector<ExpectedEntry> expectedNormalized;

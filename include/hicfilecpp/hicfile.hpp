@@ -152,6 +152,11 @@ public:
     std::vector<int32_t> getFragResolutions() const;
     // Restriction sites per chromosome, present when FRAG resolutions are.
     std::vector<int32_t> fragmentSiteCounts() const;
+    // The site positions themselves, one entry per chromosome in header order
+    // ("All" first, with none); empty without FRAG resolutions. They are what
+    // WriteOptions::fragmentSites takes. Opening a file with FRAG resolutions
+    // keeps them in memory, four bytes per site.
+    const std::vector<std::vector<int32_t>>& fragmentSites() const;
     bool hasMatrix(int32_t chr1Index, int32_t chr2Index) const;
     std::vector<ZoomHeader> matrixZoomHeaders(int32_t chr1Index, int32_t chr2Index) const;
     // False when the footer ends after the raw expected values, with no

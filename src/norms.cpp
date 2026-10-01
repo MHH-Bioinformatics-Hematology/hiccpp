@@ -67,8 +67,8 @@ double percentileMath3(std::vector<double> values, double p) {
 // ------------------------------------------------ ExpectedValueCalculation
 
 ExpectedValueCalculation::ExpectedValueCalculation(const std::vector<int64_t>& lengths, int32_t gridSize,
-                                                   std::string type)
-    : lengths_(lengths), gridSize_(gridSize), type_(std::move(type)) {
+                                                   std::string type, std::string unit)
+    : lengths_(lengths), gridSize_(gridSize), type_(std::move(type)), unit_(std::move(unit)) {
     int64_t maxLen = 0;
     for (size_t i = 1; i < lengths_.size(); ++i) {
         maxLen = std::max(maxLen, lengths_[i]);

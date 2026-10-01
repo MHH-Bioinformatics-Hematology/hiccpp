@@ -17,6 +17,8 @@ namespace {
 const std::string kData = HICFILECPP_TEST_DATA;
 const std::string kJ8 = kData + "/SRR1791297_30.juicer_tools_1.22.01.v8.hic";
 const std::string kJ9 = kData + "/SRR1791297_30.juicer_tools_2.20.00.v9.hic";
+const std::string kJ8Frag = kData + "/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic";
+const std::string kJ9Frag = kData + "/SRR1791297_30.juicer_tools_2.20.00.frag.v9.hic";
 
 std::string scratch(const std::string& name) {
     std::filesystem::create_directories(HICFILECPP_TEST_SCRATCH);
@@ -79,6 +81,98 @@ private:
     hicfilecpp::HiCFile file_;
     int32_t resolution_;
 };
+
+// The pixels of a Juicer-written file with fragment maps: base pair pixels at
+// the finest base pair resolution and fragment pixels at the finest fragment
+// one, with the file's own restriction sites.
+class FragSource : public hicfilecpp::PixelSource {
+public:
+    FragSource(const std::string& path, int32_t resolution, int32_t fragResolution)
+        : file_(path), resolution_(resolution), fragResolution_(fragResolution) {
+        for (const auto& c : file_.getChromosomes()) {
+            if (c.index > 0) {
+                chromosomes.emplace_back(c.name, c.length);
+            }
+        }
+        sites.assign(file_.fragmentSites().begin() + 1, file_.fragmentSites().end());
+    }
+
+    // A fragment bin region spans resolution fragments, and a fragment number
+    // may be the site count itself, so the query reaches one bin past the last.
+    int64_t fragExtent(int32_t chr, int32_t resolution) const {
+        return static_cast<int64_t>(sites[static_cast<size_t>(chr)].size()) * resolution + resolution;
+    }
+
+    void emit(int32_t resolution, int32_t chr1, int32_t chr2, const std::string& unit,
+              const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) {
+        if (!file_.hasMatrix(chr1 + 1, chr2 + 1)) {
+            return;
+        }
+        const auto& a = chromosomes[static_cast<size_t>(chr1)];
+        const auto& b = chromosomes[static_cast<size_t>(chr2)];
+        const int64_t ea = unit == "FRAG" ? fragExtent(chr1, resolution) : a.second;
+        const int64_t eb = unit == "FRAG" ? fragExtent(chr2, resolution) : b.second;
+        std::vector<hicfilecpp::Pixel> batch;
+        for (const auto& r :
+             file_.getMatrixZoomData(a.first, b.first, "observed", "NONE", unit, resolution).getRecords(0, ea, 0, eb)) {
+            batch.push_back(hicfilecpp::Pixel{r.binX / resolution, r.binY / resolution, r.counts});
+        }
+        consume(batch.data(), batch.size());
+    }
+
+    void pixels(int32_t resolution, int32_t chr1, int32_t chr2,
+                const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) override {
+        REQUIRE(resolution == resolution_);
+        emit(resolution, chr1, chr2, "BP", consume);
+    }
+    void fragPixels(int32_t resolution, int32_t chr1, int32_t chr2,
+                    const std::function<void(const hicfilecpp::Pixel*, size_t)>& consume) override {
+        REQUIRE(resolution == fragResolution_);
+        emit(resolution, chr1, chr2, "FRAG", consume);
+    }
+
+    std::vector<std::pair<std::string, int64_t>> chromosomes;
+    std::vector<std::vector<int32_t>> sites;
+
+private:
+    hicfilecpp::HiCFile file_;
+    int32_t resolution_;
+    int32_t fragResolution_;
+};
+
+// The resolutions of the FRAG test files: pre -r 500000,50000,100f,20f.
+hicfilecpp::WriteOptions fragOptionsFor(const FragSource& source, int32_t version) {
+    hicfilecpp::WriteOptions options;
+    options.version = version;
+    options.genomeId = "sacCer3.chrom.sizes";
+    options.chromosomes = source.chromosomes;
+    options.resolutions = {500000, 50000};
+    options.fragResolutions = {100, 20};
+    options.fragmentSites = source.sites;
+    options.sourceResolution = 50000;
+    options.sourceFragResolution = 20;
+    // Juicer tools 2.20.00 writes no KR unless -k asks for it, so the version 9
+    // reference holds none.
+    if (version == 9) {
+        options.normalizations = {"VC", "VC_SQRT", "SCALE"};
+    }
+    return options;
+}
+
+std::vector<Key> fragRecordsOf(const hicfilecpp::HiCFile& file, const FragSource& source, int32_t chr1, int32_t chr2,
+                               int32_t resolution) {
+    std::vector<Key> out;
+    for (const auto& r : file
+                             .getMatrixZoomData(source.chromosomes[static_cast<size_t>(chr1)].first,
+                                                source.chromosomes[static_cast<size_t>(chr2)].first, "observed",
+                                                "NONE", "FRAG", resolution)
+                             .getRecords(0, source.fragExtent(chr1, resolution), 0,
+                                         source.fragExtent(chr2, resolution))) {
+        out.emplace_back(r.binX, r.binY, r.counts);
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
 
 hicfilecpp::WriteOptions optionsFor(const HicSource& source, int32_t version) {
     hicfilecpp::WriteOptions options;
@@ -311,4 +405,207 @@ TEST_CASE("a footer without a normalized expected-value section is reported") {
     CHECK_FALSE(truncated.hasNormalizedExpectedSection());
     CHECK(truncated.getNormalizationTypes().empty());
     CHECK(hicfilecpp::HiCFile(kJ9).hasNormalizedExpectedSection());
+}
+
+TEST_CASE("fragment resolutions reproduce the FRAG records, vectors and expected values of Juicer tools") {
+    for (const auto& [version, reference] : {std::pair{8, kJ8Frag}, std::pair{9, kJ9Frag}}) {
+        FragSource source(reference, 50000, 20);
+        const std::string path = scratch("frag.v" + std::to_string(version) + ".hic");
+        hicfilecpp::writeHicFile(path, fragOptionsFor(source, version), source);
+        const hicfilecpp::HiCFile written(path);
+        const hicfilecpp::HiCFile juicer(reference);
+        CAPTURE(version);
+        CHECK(written.getResolutions() == juicer.getResolutions());
+        CHECK(written.getFragResolutions() == juicer.getFragResolutions());
+        CHECK(written.fragmentSiteCounts() == juicer.fragmentSiteCounts());
+        CHECK(written.fragmentSites() == juicer.fragmentSites());
+
+        const auto nChromosomes = static_cast<int32_t>(source.chromosomes.size());
+        // Every zoom header: the unit, the zoom index, the sum and the block
+        // layout Juicer's MatrixPP arithmetic gives the fragment zooms.
+        for (int32_t chr = 0; chr < nChromosomes; ++chr) {
+            const auto mine = written.matrixZoomHeaders(chr + 1, chr + 1);
+            const auto theirs = juicer.matrixZoomHeaders(chr + 1, chr + 1);
+            REQUIRE(mine.size() == theirs.size());
+            for (size_t k = 0; k < mine.size(); ++k) {
+                CAPTURE(chr);
+                CAPTURE(mine[k].unit);
+                CAPTURE(mine[k].binSize);
+                CHECK(mine[k].unit == theirs[k].unit);
+                CHECK(mine[k].binSize == theirs[k].binSize);
+                CHECK(mine[k].zoomIndex == theirs[k].zoomIndex);
+                CHECK(mine[k].blockBinCount == theirs[k].blockBinCount);
+                CHECK(mine[k].blockColumnCount == theirs[k].blockColumnCount);
+                CHECK(mine[k].sumCounts == theirs[k].sumCounts);
+            }
+        }
+
+        // Every FRAG record of every pair, and the base pair records too.
+        int64_t records = 0;
+        for (int32_t c1 = 0; c1 < nChromosomes; ++c1) {
+            for (int32_t c2 = c1; c2 < nChromosomes; ++c2) {
+                for (const int32_t resolution : {100, 20}) {
+                    const auto theirs = fragRecordsOf(juicer, source, c1, c2, resolution);
+                    CAPTURE(c1);
+                    CAPTURE(c2);
+                    CAPTURE(resolution);
+                    CHECK(fragRecordsOf(written, source, c1, c2, resolution) == theirs);
+                    records += static_cast<int64_t>(theirs.size());
+                }
+            }
+        }
+        CHECK(records > 40000);
+        for (const int32_t resolution : {500000, 50000}) {
+            const auto& name = source.chromosomes[1].first;
+            CHECK(recordsOf(written, name, name, resolution) == recordsOf(juicer, name, name, resolution));
+        }
+
+        // The FRAG expected values, their per-chromosome factors and the FRAG
+        // normalization vectors, for every entry the reference holds.
+        int32_t expectedKeys = 0;
+        for (const auto& key : juicer.expectedValuesKeys()) {
+            if (key.unit != "FRAG") {
+                continue;
+            }
+            const auto mine = written.readExpectedValues(key);
+            const auto theirs = juicer.readExpectedValues(key);
+            REQUIRE(theirs.has_value());
+            REQUIRE(mine.has_value());
+            CAPTURE(key.normalization);
+            CAPTURE(key.binSize);
+            CHECK(worstRelative(mine->values, theirs->values) <= 1e-3);
+            REQUIRE(mine->normalizationFactors.size() == theirs->normalizationFactors.size());
+            for (size_t k = 0; k < mine->normalizationFactors.size(); ++k) {
+                CHECK(mine->normalizationFactors[k].first == theirs->normalizationFactors[k].first);
+                CHECK(mine->normalizationFactors[k].second ==
+                      doctest::Approx(theirs->normalizationFactors[k].second).epsilon(1e-3));
+            }
+            ++expectedKeys;
+        }
+        // Two raw entries and one per normalization per fragment resolution.
+        CHECK(expectedKeys == (version == 8 ? 10 : 8));
+        int32_t vectors = 0;
+        for (const auto& entry : juicer.normVectorIndex()) {
+            if (entry.unit != "FRAG") {
+                continue;
+            }
+            const auto mine = written.readNormVector(entry.normalization, entry.chrIndex, "FRAG", entry.resolution);
+            const auto theirs = juicer.readNormVector(entry.normalization, entry.chrIndex, "FRAG", entry.resolution);
+            REQUIRE(theirs.has_value());
+            REQUIRE(mine.has_value());
+            CAPTURE(entry.normalization);
+            CAPTURE(entry.chrIndex);
+            CAPTURE(entry.resolution);
+            REQUIRE(mine->size() == theirs->size());
+            CHECK(worstRelative(*mine, *theirs) <= 1e-3);
+            ++vectors;
+        }
+        CHECK(vectors == (version == 8 ? 128 : 96));
+    }
+}
+
+TEST_CASE("a fragment file does not depend on the number of threads") {
+    for (const int32_t version : {8, 9}) {
+        FragSource source(kJ8Frag, 50000, 20);
+        auto options = fragOptionsFor(source, version);
+        const std::string one = scratch("frag.threads1.hic");
+        const std::string many = scratch("frag.threads8.hic");
+        options.threads = 1;
+        hicfilecpp::writeHicFile(one, options, source);
+        options.threads = 8;
+        hicfilecpp::writeHicFile(many, options, source);
+        CHECK(bytesOf(one) == bytesOf(many));
+    }
+}
+
+TEST_CASE("fragment options are checked and a base pair source needs none") {
+    FragSource source(kJ8Frag, 50000, 20);
+    const auto options = fragOptionsFor(source, 9);
+    const std::string path = scratch("frag.invalid.hic");
+    auto bad = options;
+    bad.fragResolutions = {30};  // not a multiple of the source fragment resolution
+    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    bad = options;
+    bad.sourceFragResolution = 0;
+    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    bad = options;
+    bad.fragmentSites.pop_back();
+    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    bad = options;
+    bad.fragResolutions.clear();
+    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    bad = options;
+    bad.fragmentSites[0] = {1000, 500};  // out of order
+    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+    bad = options;
+    bad.fragResolutions = {100, 100};
+    CHECK_THROWS_AS(hicfilecpp::writeHicFile(path, bad, source), hicfilecpp::HicError);
+
+    // A source that does not override fragPixels hands over no fragment pixels,
+    // so the matrices hold base pair zooms only.
+    HicSource plain(kJ8, 10000);
+    auto onlyBp = optionsFor(plain, 9);
+    onlyBp.fragResolutions = {100};
+    onlyBp.sourceFragResolution = 20;
+    onlyBp.fragmentSites = source.sites;
+    const std::string onlyBpPath = scratch("frag.none.hic");
+    hicfilecpp::writeHicFile(onlyBpPath, onlyBp, plain);
+    const hicfilecpp::HiCFile written(onlyBpPath);
+    CHECK(written.getFragResolutions() == std::vector<int32_t>{100});
+    CHECK(written.fragmentSiteCounts().size() == source.sites.size() + 1);
+    for (const auto& header : written.matrixZoomHeaders(1, 1)) {
+        CHECK(header.unit == "BP");
+    }
+}
+
+TEST_CASE("provided normalization vectors are stored for the fragment resolutions too") {
+    FragSource source(kJ8Frag, 50000, 20);
+    auto options = fragOptionsFor(source, 8);
+    const hicfilecpp::HiCFile juicer(kJ8Frag);
+    options.normalizations = {"VC"};
+    options.providedNormalizations = {"KR"};
+    options.normVector = [&](const std::string& name, int32_t chrIndex, int32_t resolution) {
+        auto vector = juicer.readNormVector(name, chrIndex + 1, "BP", resolution);
+        return vector.value_or(std::vector<double>{});
+    };
+    int32_t askedFrag = 0;
+    options.fragNormVector = [&](const std::string& name, int32_t chrIndex, int32_t resolution) {
+        ++askedFrag;
+        auto vector = juicer.readNormVector(name, chrIndex + 1, "FRAG", resolution);
+        return vector.value_or(std::vector<double>{});
+    };
+    const std::string path = scratch("frag.provided.hic");
+    hicfilecpp::writeHicFile(path, options, source);
+    CHECK(askedFrag == 2 * 16);
+    const hicfilecpp::HiCFile written(path);
+    for (const int32_t resolution : {100, 20}) {
+        for (int32_t chr = 1; chr <= 16; ++chr) {
+            const auto theirs = juicer.readNormVector("KR", chr, "FRAG", resolution);
+            const auto mine = written.readNormVector("KR", chr, "FRAG", resolution);
+            REQUIRE(theirs.has_value());
+            REQUIRE(mine.has_value());
+            CAPTURE(resolution);
+            CAPTURE(chr);
+            REQUIRE(mine->size() == theirs->size());
+            for (size_t i = 0; i < mine->size(); ++i) {
+                CHECK((std::isnan((*mine)[i]) ? std::isnan((*theirs)[i]) : (*mine)[i] == (*theirs)[i]));
+            }
+        }
+        // The expected values the provided vectors give match Juicer's KR ones,
+        // which came from the same vectors.
+        const auto mine = written.readExpectedValues({"KR", "FRAG", resolution});
+        const auto theirs = juicer.readExpectedValues({"KR", "FRAG", resolution});
+        REQUIRE(mine.has_value());
+        REQUIRE(theirs.has_value());
+        CHECK(worstRelative(mine->values, theirs->values) <= 1e-3);
+    }
+    // Without fragNormVector the fragment resolutions hold the computed
+    // normalizations only.
+    options.fragNormVector = nullptr;
+    const std::string other = scratch("frag.provided.none.hic");
+    hicfilecpp::writeHicFile(other, options, source);
+    const hicfilecpp::HiCFile plain(other);
+    CHECK_FALSE(plain.readNormVector("KR", 1, "FRAG", 20).has_value());
+    CHECK(plain.readNormVector("VC", 1, "FRAG", 20).has_value());
+    CHECK(plain.readNormVector("KR", 1, "BP", 50000).has_value());
 }

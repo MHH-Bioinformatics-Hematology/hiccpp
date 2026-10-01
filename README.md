@@ -14,6 +14,9 @@ writes versions 8 and 9, without Python or Java.
   values and normalization vectors (VC, VC_SQRT, KR, SCALE) are Juicer's; the
   bytes are not. Blocks are compressed on several threads and the output does
   not depend on the number of threads.
+- Fragment resolutions are written as well, as `pre -f <sites file>` does, for
+  both versions: `WriteOptions::fragResolutions` and `fragmentSites`, with the
+  pixels from `PixelSource::fragPixels`.
 
 ```cpp
 #include <hicfilecpp/hicfilecpp.hpp>
@@ -28,6 +31,9 @@ options.version = 9;
 options.chromosomes = {{"chr1", 248956422}, {"chr2", 242193529}};
 options.sourceResolution = 5000;                             // the pixels' resolution
 options.resolutions = {5000, 10000, 100000, 1000000};
+options.fragResolutions = {20, 100};                         // fragment maps, as pre -f
+options.fragmentSites = sites;                               // one site list per chromosome
+options.sourceFragResolution = 20;                           // the fragment pixels' resolution
 options.threads = 8;
 hicfilecpp::writeHicFile("out.hic", options, source);        // source: a hicfilecpp::PixelSource
 hicfilecpp::addNorm("other.hic", {"VC", "KR", "SCALE"});
@@ -61,7 +67,7 @@ cmake --install build --prefix /opt/hicfilecpp
 Downstream projects use either
 
 ```cmake
-find_package(hicfilecpp 0.4 REQUIRED)
+find_package(hicfilecpp 0.5 REQUIRED)
 target_link_libraries(app PRIVATE hicfilecpp::hicfilecpp)
 ```
 

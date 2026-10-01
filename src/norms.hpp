@@ -34,8 +34,11 @@ double percentileMath3(std::vector<double> values, double p);
 class ExpectedValueCalculation {
 public:
     // lengths are indexed by chromosome index; index 0, the whole-genome
-    // pseudo-chromosome, takes no part.
-    ExpectedValueCalculation(const std::vector<int64_t>& lengths, int32_t gridSize, std::string type);
+    // pseudo-chromosome, takes no part. For unit "FRAG" they are the fragment
+    // counts Juicer hands the constructor in its fragmentCountMap instead of
+    // the chromosome lengths, and every "length" below is that count.
+    ExpectedValueCalculation(const std::vector<int64_t>& lengths, int32_t gridSize, std::string type,
+                             std::string unit = "BP");
 
     void addDistance(int32_t chrIndex, int32_t bin1, int32_t bin2, double weight);
     bool hasData() const { return !chromosomeCounts_.empty(); }
@@ -43,6 +46,7 @@ public:
 
     int32_t gridSize() const { return gridSize_; }
     const std::string& type() const { return type_; }
+    const std::string& unit() const { return unit_; }
     const std::vector<double>& densityAvg() const { return densityAvg_; }
     const std::map<int32_t, double>& chrScaleFactors() const { return chrScaleFactors_; }
 
@@ -50,6 +54,7 @@ private:
     std::vector<int64_t> lengths_;
     int32_t gridSize_;
     std::string type_;
+    std::string unit_;
     int64_t numberOfBins_ = 0;
     std::vector<double> actualDistances_;
     std::map<int32_t, double> chromosomeCounts_;

@@ -46,6 +46,7 @@ any normalization the file holds (`"VC"`, `"VC_SQRT"`, `"KR"`, `"SCALE"`,
 | `HiCFile::attributes()` | the header's key/value attributes, in file order |
 | `HiCFile::getFragResolutions()` | FRAG resolutions |
 | `HiCFile::fragmentSiteCounts()` | restriction sites per chromosome |
+| `HiCFile::fragmentSites()` | the site positions themselves, per chromosome |
 | `HiCFile::masterIndexPosition()`, `normVectorIndexHeader()` | footer positions |
 | `HiCFile::hasMatrix(c1, c2)`, `matrixZoomHeaders(c1, c2)` | the matrices and their zoom headers |
 | `HiCFile::expectedValuesKeys()`, `readExpectedValues(key)` | expected-value entries with their per-chromosome factors |
@@ -65,20 +66,47 @@ Errors are `hicfilecpp::HicError`, derived from `std::runtime_error`.
 | `<infile>` contacts, "short with score" | a `PixelSource`: pixels of one chromosome pair at `sourceResolution`, each counting as one contact at the start of its bins |
 | the chromosome sizes file `<genomeID>` | `WriteOptions::chromosomes`, in file order; "All" is added in front |
 | (version) 1.22.01 writes 8, 2.20.00 writes 9 | `WriteOptions::version` |
-| `-r <resolutions>` | `WriteOptions::resolutions` (base pair) |
+| `-r <resolutions>` | `WriteOptions::resolutions` (base pair) and `fragResolutions` (the "f" suffixed entries) |
+| `-f <sites file>` | `WriteOptions::fragmentSites`, one site list per chromosome |
 | `-k <normalizations>` | `WriteOptions::normalizations` (VC, VC_SQRT, KR, SCALE) |
 | `-n` | `WriteOptions::normalizations = {}` |
 | `-j <threads>` | `WriteOptions::threads` (block compression; no effect on the output) |
 | `addNorm <file>` with `-k` | `addNorm(file, normalizations, threads)` |
 | `addNorm <file> <vector file>` (custom vectors) | `WriteOptions::providedNormalizations` and `normVector` at write time: vectors stored as given, under any label |
 
-Not available: fragment maps (`-f`), `-d`, `-m`, `-q`, `-c`, `-t`, `-s`, `-g`,
-`-z`, `-a`, position randomization, `--v9-depth-base` (always 2), genome-wide
-and inter-chromosomal normalizations (`-w`, GW_*, INTER_*) computed by the
-library (provided vectors may carry these labels), and custom expected value
-files.
+Not available: `-d`, `-m`, `-q`, `-c`, `-t`, `-s`, `-g`, `-z`, `-a`, position
+randomization, `--v9-depth-base` (always 2), genome-wide and inter-chromosomal
+normalizations (`-w`, GW_*, INTER_*) computed by the library (provided vectors
+may carry these labels), custom expected value files, and `addNorm` on a file
+with fragment resolutions.
 
 `PixelSource::pixels(resolution, chr1, chr2, consume)` hands the pixels of one
 chromosome pair to `consume` in batches of `Pixel{bin1, bin2, count}`.
 `WriteOptions::sourceProvidesEveryResolution` makes the writer ask the source
 for every resolution instead of binning `sourceResolution`.
+
+### Fragment resolutions
+
+`WriteOptions::fragResolutions` and `fragmentSites` make the writer add the
+fragment maps of Juicer tools `pre -f`, for version 8 and version 9 alike. The
+pixels come from `PixelSource::fragPixels`, whose bins count restriction
+fragments: the writer asks for `sourceFragResolution` and bins it up to each
+coarser fragment resolution, the way it bins `sourceResolution` for the base
+pair ones, and `sourceProvidesEveryResolution` covers both. `fragPixels` has a
+default implementation that hands over nothing, so a source written before this
+option keeps compiling and then yields a file whose matrices hold base pair
+zooms only.
+
+| Option | Meaning |
+|---|---|
+| `fragResolutions` | fragment resolutions, written after the base pair ones, coarsest first |
+| `fragmentSites` | the sites file: one ascending list of positions per entry of `chromosomes` |
+| `sourceFragResolution` | the fragment resolution `fragPixels` is asked for; every entry of `fragResolutions` is a multiple of it |
+| `fragNormVector` | the `normVector` of the fragment resolutions, for `providedNormalizations` |
+
+A chromosome's fragment bin count at resolution N is its site count divided by
+N plus one, and its block layout follows from that count the way a base pair
+zoom's follows from the chromosome length. Expected values and normalization
+vectors are written per fragment resolution under the unit "FRAG". The
+whole-genome "All" matrix stays a base pair matrix, as it is in Juicer's files,
+and "All" carries no sites.

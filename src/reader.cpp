@@ -91,7 +91,12 @@ FileState::FileState(const std::string& fileName) : path(fileName), file(fileNam
         for (int64_t i = 0; i < nChromosomes; ++i) {
             const int32_t nSites = in.get<int32_t>();
             fragmentSiteCounts.push_back(nSites);
-            in.skip(4 * static_cast<int64_t>(std::max(nSites, 0)));
+            std::vector<int32_t> sites;
+            sites.reserve(static_cast<size_t>(std::max(nSites, 0)));
+            for (int32_t k = 0; k < nSites; ++k) {
+                sites.push_back(in.get<int32_t>());
+            }
+            fragmentSites.push_back(std::move(sites));
         }
     }
 
@@ -442,6 +447,10 @@ std::vector<int32_t> HiCFile::getFragResolutions() const {
 
 std::vector<int32_t> HiCFile::fragmentSiteCounts() const {
     return state_->fragmentSiteCounts;
+}
+
+const std::vector<std::vector<int32_t>>& HiCFile::fragmentSites() const {
+    return state_->fragmentSites;
 }
 
 bool HiCFile::hasMatrix(int32_t chr1Index, int32_t chr2Index) const {

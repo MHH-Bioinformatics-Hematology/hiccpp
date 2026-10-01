@@ -39,6 +39,20 @@ public:
     // at a time, in pair order, and may ask for a pair once per resolution.
     virtual void pixels(int32_t resolution, int32_t chr1, int32_t chr2,
                         const std::function<void(const Pixel* pixels, size_t count)>& consume) = 0;
+
+    // The same for fragment binned pixels, whose bins count restriction
+    // fragments instead of base pairs: bin1 lies in 0 to the site count of
+    // chr1 divided by `resolution`, as Juicer tools pre -f bins the fragment
+    // numbers of its contacts. Only called when WriteOptions::fragResolutions
+    // is not empty; the default hands over nothing, so a source written for
+    // base pair resolutions keeps compiling.
+    virtual void fragPixels(int32_t resolution, int32_t chr1, int32_t chr2,
+                            const std::function<void(const Pixel* pixels, size_t count)>& consume) {
+        (void)resolution;
+        (void)chr1;
+        (void)chr2;
+        (void)consume;
+    }
 };
 
 struct WriteOptions {
@@ -52,13 +66,31 @@ struct WriteOptions {
     std::vector<std::pair<std::string, int64_t>> chromosomes;
     // Base pair resolutions, written from the coarsest to the finest.
     std::vector<int32_t> resolutions;
+    // Fragment resolutions, as Juicer tools pre takes them from the "f"
+    // suffixed entries of -r (100f, 20f) when -f names a sites file. They are
+    // written after the base pair resolutions, from the coarsest to the
+    // finest, and need `fragmentSites`. The whole-genome "All" matrix stays a
+    // base pair matrix, as it is in Juicer's files.
+    std::vector<int32_t> fragResolutions;
+    // The restriction sites of each chromosome, in ascending order: one entry
+    // per entry of `chromosomes`, the lines of the sites file of Juicer tools
+    // pre -f. Needed when `fragResolutions` is not empty, and empty for a
+    // chromosome the sites file leaves out. A chromosome's fragment bin count
+    // at resolution N is its site count divided by N plus one, the arithmetic
+    // of Juicer's FragmentCalculation.getNumberFragments.
+    std::vector<std::vector<int32_t>> fragmentSites;
     // The resolution of the pixels the source hands over. Each pixel counts
     // as one contact at the start of its bins, so every resolution, which
     // must be a multiple of this one, holds what Juicer tools pre makes of
     // the same contacts.
     int32_t sourceResolution = 0;
+    // The fragment resolution of the pixels `PixelSource::fragPixels` hands
+    // over, which every entry of `fragResolutions` must be a multiple of.
+    int32_t sourceFragResolution = 0;
     // Ask the source for pixels at every resolution instead of binning the
-    // source resolution. The whole-genome matrix then uses the finest one.
+    // source resolution. The whole-genome matrix then uses the finest base
+    // pair one. This covers the fragment resolutions as well, so
+    // `sourceFragResolution` is then unused.
     bool sourceProvidesEveryResolution = false;
     // Computed as Juicer tools addNorm does; any of VC, VC_SQRT, KR, SCALE.
     std::vector<std::string> normalizations{"VC", "VC_SQRT", "KR", "SCALE"};
@@ -75,6 +107,10 @@ struct WriteOptions {
     // for VC types, NaN otherwise; a longer one is cut.
     std::vector<std::string> providedNormalizations;
     std::function<std::vector<double>(const std::string& name, int32_t chrIndex, int32_t resolution)> normVector;
+    // The same for the fragment resolutions, asked for each name of
+    // `providedNormalizations` at each entry of `fragResolutions`. Left unset,
+    // no provided vector is written for the fragment resolutions.
+    std::function<std::vector<double>(const std::string& name, int32_t chrIndex, int32_t resolution)> fragNormVector;
     // Header attributes written after "software", in order.
     std::vector<std::pair<std::string, std::string>> attributes;
     // The "software" attribute; empty means "hicfilecpp <version>".

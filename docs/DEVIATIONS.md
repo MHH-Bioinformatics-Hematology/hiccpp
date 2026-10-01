@@ -68,7 +68,10 @@ is exercised by the harness cases named in brackets.
 ## Writing: Juicer tools behaviour reproduced as is
 
 Every write case runs Juicer tools pre on the same contacts and compares the
-files through hicstraw [W.*].
+files through hicstraw [W.*]. The fragment items 8 to 11 are covered by the
+unit test [F] instead, which writes a file from the FRAG pixels of the Juicer
+written fragment reference and compares every FRAG record, expected value and
+normalization vector with it.
 
 1. A zoom level's header holds the sum of its contacts, counting
    off-diagonal intra-chromosomal contacts twice, and 0 for the occupied cell
@@ -97,6 +100,26 @@ files through hicstraw [W.*].
    500.
 7. Version 9 numbers intra-chromosomal blocks by their log2 distance from
    the diagonal and chooses 16 or 32 bit row and column indexes per block.
+8. A fragment zoom takes the chromosome's site count where a base pair zoom
+    takes its length, and its blocks are laid out without the version 9 column
+    widening of fine resolutions: MatrixPP calls `getNumColumnsFromNumBins`
+    with a cutoff of 0 there, so a fragment zoom always has
+    `siteCount / binSize / 1000 + 1` block columns. The version 9 numbering of
+    intra-chromosomal blocks by their distance from the diagonal does apply to
+    fragment zooms. [F]
+9. The fragment count a chromosome contributes to the expected values is its
+    site count plus one in the raw section and its site count in the
+    normalized one: Preprocessor builds its `fragmentCountMap` from
+    `sites.length + 1`, while the normalization step reads the file back and
+    DatasetReaderV2 puts `sites.length` in the map, so the two sections of one
+    file disagree by one fragment. hicfilecpp reproduces both. [F]
+10. A normalization vector of a fragment zoom holds `siteCount / binSize + 1`
+    entries, the bin count of Juicer's HiCFragmentAxis, and not the
+    `blockBinCount` times `blockColumnCount` of a base pair zoom, which is one
+    more with a single block column. [F]
+11. Juicer tools 2.20.00 writes no KR vectors unless `-k` asks for them, so a
+    version 9 file written with its defaults holds VC, VC_SQRT and SCALE only,
+    at the fragment resolutions as at the base pair ones. [F]
 
 ## Writing: deliberate deviations
 
@@ -105,8 +128,8 @@ files through hicstraw [W.*].
    does but compression may differ, and the header carries the "software"
    attribute ("hicfilecpp <version>" unless set) and the caller's attributes,
    not Juicer's `hicFileScalingFactor`, `nviIndex` and `nviLength`.
-2. Fragment resolutions, genome-wide and inter-chromosomal normalizations and
-   the filters and statistics options of pre are not written.
+2. Genome-wide and inter-chromosomal normalizations and the filters and
+   statistics options of pre are not written.
 3. Juicer skips a chromosome's normalization when its Java heap looks too
    small (records times 1000 at least the maximum heap); hicfilecpp always
    computes it. Juicer 2.20.00 spills blocks to temporary files and may then
@@ -115,8 +138,17 @@ files through hicstraw [W.*].
 4. Normalization vectors are kept in memory until the footer is written,
    eight bytes per bin per normalization.
 5. addNorm refuses files with FRAG resolutions, where Juicer would also
-   normalize the fragment maps. Like Juicer it replaces the normalizations a
-   file already holds.
+   normalize the fragment maps; writeHicFile does write them. Like Juicer,
+   addNorm replaces the normalizations a file already holds.
 6. Non-finite counts, pixels outside their chromosome, a chromosome named
    "All", repeated chromosome names and lengths above 2147483647 raise
-   `HicError`.
+   `HicError`. So do fragment resolutions without a site list per chromosome,
+   unsorted sites, and a fragment pixel past a chromosome's site count. Juicer
+   checks none of these.
+7. The fragment write cases are not in the equivalence harness: its writer
+   cases derive one contact list from a base pair source, and a fragment map
+   needs a sites file and the fragment columns of the contact format, which
+   the case schema has no room for. [F] is the unit test "fragment resolutions
+   reproduce the FRAG records, vectors and expected values of Juicer tools"
+   instead, cross-checked outside the build by reading both files with
+   hicstraw 1.3.1 and with Juicer tools dump.

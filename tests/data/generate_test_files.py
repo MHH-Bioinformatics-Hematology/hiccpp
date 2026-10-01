@@ -17,6 +17,7 @@ Files written into this directory:
   SRR1791297_30.juicer_tools_1.22.01.v8.hic       version 8, BP resolutions
   SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic  version 8, BP and FRAG
   SRR1791297_30.juicer_tools_2.20.00.v9.hic       version 9, BP resolutions
+  SRR1791297_30.juicer_tools_2.20.00.frag.v9.hic  version 9, BP and FRAG
 """
 
 import argparse
@@ -77,6 +78,9 @@ def main():
         "SRR1791297_30.juicer_tools_2.20.00.v9.hic":
             java + [args.juicer9, "pre", "-j", "1", "-k", "VC,VC_SQRT,KR,SCALE,INTER_SCALE,GW_SCALE",
                     "-r", "1000000,250000,50000,10000", contacts, "v9.hic", sizes],
+        "SRR1791297_30.juicer_tools_2.20.00.frag.v9.hic":
+            java + [args.juicer9, "pre", "-j", "1", "-f", "sites.txt", "-r", "500000,50000,100f,20f",
+                    contacts, "frag.v9.hic", sizes],
     }
     for name, cmd in outputs.items():
         run(cmd, args.work, name + ".log")

@@ -41,6 +41,7 @@ read with hicstraw 1.3.1, on OpenJDK 11.0.1 (Zulu 11.2+3):
 | `SRR1791297_30.juicer_tools_1.22.01.v8.hic` | Juicer tools 1.22.01 | `pre -j 1 -r 1000000,250000,50000,10000 contacts.txt out.hic sacCer3.chrom.sizes` |
 | `SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic` | Juicer tools 1.22.01 | `pre -j 1 -f sites.txt -r 500000,50000,100f,20f contacts.txt out.hic sacCer3.chrom.sizes` |
 | `SRR1791297_30.juicer_tools_2.20.00.v9.hic` | Juicer tools 2.20.00 | `pre -j 1 -k VC,VC_SQRT,KR,SCALE,INTER_SCALE,GW_SCALE -r 1000000,250000,50000,10000 contacts.txt out.hic sacCer3.chrom.sizes` |
+| `SRR1791297_30.juicer_tools_2.20.00.frag.v9.hic` | Juicer tools 2.20.00 | `pre -j 1 -f sites.txt -r 500000,50000,100f,20f contacts.txt out.hic sacCer3.chrom.sizes` |
 
 Juicer tools 1.22.01 is the `share/juicer-1.6-0/juicer_tools.jar` of the
 conda package `HCC::juicer-1.6-cpu_py310hc74bb38_0` (its manifest reports
@@ -48,8 +49,12 @@ conda package `HCC::juicer-1.6-cpu_py310hc74bb38_0` (its manifest reports
 2.20.00 is `juicer_tools.2.20.00.jar` of the Juicebox v2.20.00 GitHub release.
 Both jars target Java 8 (class file version 52).
 
-`sites.txt` places a synthetic restriction site every 2 kb; the fragment maps
-exist only to give the reader FRAG resolutions and FRAG vectors to read.
+`sites.txt` places a synthetic restriction site every 2 kb. The two fragment
+files are the references the reader and the writer are checked against: the
+writer reproduces their FRAG records, expected values and normalization vectors
+from their own FRAG pixels. The 1.22.01 jar downloadable from
+`hicfiles.tc4ga.com/public/juicer/juicer_tools_1.22.01.jar` writes the version 8
+fragment file byte for byte as the conda jar named above did.
 
 ### Versions 6 and 7
 
