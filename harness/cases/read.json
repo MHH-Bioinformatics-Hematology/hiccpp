@@ -1,6 +1,6 @@
 {
  "generate": [
-  {"prefix": "SRR", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic"},
+  {"prefix": "SRR", "file": "@extra/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic"},
   {"prefix": "J8", "file": "@data/SRR1791297_30.juicer_tools_1.22.01.v8.hic"},
   {"prefix": "J8F", "file": "@data/SRR1791297_30.juicer_tools_1.22.01.frag.v8.hic"},
   {"prefix": "J9", "file": "@data/SRR1791297_30.juicer_tools_2.20.00.v9.hic"},
@@ -9,7 +9,7 @@
   {"prefix": "G6", "file": "@data/GM12878_combined_30.chr21_chr22.v6.hic"}
  ],
  "cases": [
-  {"name": "R.SRR.sub.BP.10000.observed", "op": "records", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+  {"name": "R.SRR.sub.BP.10000.observed", "op": "records", "file": "@extra/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
    "matrix_type": "observed", "unit": "BP", "resolution": 10000,
    "queries": [
     ["NONE", "NC_001133.9", "NC_001133.9", 50000, 150000, 100000, 200000],
@@ -20,7 +20,7 @@
     ["NONE", "NC_001134.8", "NC_001134.8", 400000, 400000, 0, 813184],
     ["NONE", "NC_001134.8", "NC_001134.8", 700000, 600000, 0, 813184]
    ]},
-  {"name": "R.SRR.sub.BP.10000.oe", "op": "records", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+  {"name": "R.SRR.sub.BP.10000.oe", "op": "records", "file": "@extra/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
    "matrix_type": "oe", "unit": "BP", "resolution": 10000,
    "queries": [
     ["NONE", "NC_001133.9", "NC_001133.9", 50000, 150000, 100000, 200000],
@@ -28,7 +28,7 @@
     ["NONE", "NC_001134.8", "NC_001133.9", 100000, 300000, 0, 120000],
     ["VC", "NC_001135.5", "NC_001134.8", 0, 316620, 0, 813184]
    ]},
-  {"name": "R.SRR.sub.BP.5000.expected", "op": "records", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+  {"name": "R.SRR.sub.BP.5000.expected", "op": "records", "file": "@extra/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
    "matrix_type": "expected", "unit": "BP", "resolution": 5000,
    "queries": [
     ["NONE", "NC_001133.9", "NC_001133.9", 0, 230218, 0, 230218],
@@ -51,7 +51,7 @@
     ["GW_SCALE", "NC_001136.10", "NC_001136.10", 0, 1531933, 0, 1531933],
     ["NONE", "NC_001136.10", "NC_001134.8", 0, 500000, 0, 400000]
    ]},
-  {"name": "M.SRR.matrices", "op": "matrices", "file": "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
+  {"name": "M.SRR.matrices", "op": "matrices", "file": "@extra/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic",
    "queries": [
     ["NC_001133.9", "NC_001133.9", "observed", "NONE", "BP", 10000, 50000, 150000, 100000, 200000],
     ["NC_001133.9", "NC_001133.9", "observed", "KR", "BP", 25000, 0, 230218, 0, 230218],

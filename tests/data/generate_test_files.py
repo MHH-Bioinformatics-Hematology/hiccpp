@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Regenerates the Juicer-written test files in this directory from the
-5 kb contact records of HiCExplorer's SRR1791297_30.hic (sacCer3).
+5 kb contact records of a Hi-C matrix of SRR1791297 (sacCer3).
 
     python tests/data/generate_test_files.py --srr SRR1791297_30.hic \\
         --java JAVA --juicer8 juicer_tools_1.22.01.jar \\

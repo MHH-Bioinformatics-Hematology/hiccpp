@@ -6,10 +6,10 @@ time of both processes, applies the gates and writes a report.
 
     python harness/run.py --driver BUILD/harness/hiccpp-harness \\
         --oracle-python ENV/bin/python \\
-        --hicx-data ~/src/HiCExplorer-v4/hicexplorer/test/test_data \\
+        --extra-data /path/to/extra/test/matrices \\
         --out REPORT_DIR [--filter REGEX] [--cases FILE ...]
 
-Path tokens in case files: @hicx/ (HiCExplorer test data) and @data/ (this
+Path tokens in case files: @extra/ (a directory of further test matrices) and @data/ (this
 repository's tests/data). Every file they name must be listed with its SHA-256
 in harness/data_manifest.json.
 
@@ -77,8 +77,8 @@ def run_measured(cmd, log_path):
 
 
 class Resolver:
-    def __init__(self, hicx, manifest):
-        self.roots = {"@hicx/": hicx, "@data/": os.path.join(REPO, "tests", "data")}
+    def __init__(self, extra, manifest):
+        self.roots = {"@extra/": extra, "@data/": os.path.join(REPO, "tests", "data")}
         self.manifest = manifest
 
     def path(self, token):
@@ -92,7 +92,7 @@ class Resolver:
             return {k: self.substitute(v) for k, v in value.items()}
         if isinstance(value, list):
             return [self.substitute(v) for v in value]
-        if isinstance(value, str) and value.startswith(("@hicx/", "@data/")):
+        if isinstance(value, str) and value.startswith(("@extra/", "@data/")):
             return self.path(value)
         return value
 
@@ -268,7 +268,7 @@ def main():
     parser.add_argument("--driver", required=True)
     parser.add_argument("--oracle-python", required=True, help="python of the environment with hicstraw")
     parser.add_argument("--measure", default=None)
-    parser.add_argument("--hicx-data", required=True)
+    parser.add_argument("--extra-data", required=True)
     parser.add_argument("--out", default=None)
     parser.add_argument("--cases", nargs="*", default=None)
     parser.add_argument("--filter", default=None)
@@ -287,7 +287,7 @@ def main():
     if os.path.exists(manifest_path):
         with open(manifest_path) as handle:
             manifest = json.load(handle)
-    resolver = Resolver(os.path.abspath(os.path.expanduser(args.hicx_data)), manifest)
+    resolver = Resolver(os.path.abspath(os.path.expanduser(args.extra_data)), manifest)
     case_files = args.cases or sorted(glob.glob(os.path.join(HERE, "cases", "*.json")))
 
     if args.update_manifest:

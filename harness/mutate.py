@@ -6,7 +6,7 @@ mutated hicstraw first on PYTHONPATH, and requires at least one of them to
 fail. The installed hicstraw is never touched.
 
     python harness/mutate.py --driver BUILD/harness/hiccpp-harness \\
-        --oracle-python ENV/bin/python --hicx-data HICX_TEST_DATA \\
+        --oracle-python ENV/bin/python --extra-data HICX_TEST_DATA \\
         --straw-source STRAW/pybind11_python --scratch DIR \\
         [--include-dir DIR] [--library-dir DIR]
 
@@ -29,7 +29,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--driver", required=True)
     parser.add_argument("--oracle-python", required=True)
-    parser.add_argument("--hicx-data", required=True)
+    parser.add_argument("--extra-data", required=True)
     parser.add_argument("--straw-source", required=True)
     parser.add_argument("--scratch", required=True)
     parser.add_argument("--include-dir", default=None)
@@ -77,7 +77,7 @@ def main():
         env["PYTHONPATH"] = site + os.pathsep + env.get("PYTHONPATH", "")
         proc = subprocess.run(
             [sys.executable, os.path.join(HERE, "run.py"), "--driver", args.driver,
-             "--oracle-python", args.oracle_python, "--hicx-data", args.hicx_data,
+             "--oracle-python", args.oracle_python, "--extra-data", args.extra_data,
              "--out", os.path.join(root, "report"), "--filter", mutation["cases"]],
             env=env, capture_output=True, text=True,
         )

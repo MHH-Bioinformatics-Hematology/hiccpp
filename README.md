@@ -87,12 +87,12 @@ gate CPU time against Juicer. hicstraw runs in its own Python environment:
 ```sh
 python harness/run.py --driver build/harness/hiccpp-harness \
     --oracle-python /path/to/env/bin/python \
-    --hicx-data /path/to/HiCExplorer/hicexplorer/test/test_data \
+    --extra-data /path/to/extra/test/matrices \
     --java /path/to/java --juicer8 juicer_tools_1.22.01.jar \
     --juicer9 juicer_tools.2.20.00.jar \
     --hic2cool-python /path/to/env-with-hic2cool/bin/python --out report
 python harness/mutate.py --driver build/harness/hiccpp-harness \
-    --oracle-python /path/to/env/bin/python --hicx-data ... \
+    --oracle-python /path/to/env/bin/python --extra-data ... \
     --straw-source /path/to/straw/pybind11_python --scratch scratch
 ```
 

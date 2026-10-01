@@ -32,9 +32,9 @@ attributions; the sections below name them part by part.
 
 ## Test files in tests/data
 
-`tests/data/generate_test_files.py` writes them from the 5 kb records of
-HiCExplorer's `hicexplorer/test/test_data/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic`,
-read with hicstraw 1.3.1, on OpenJDK 11.0.1 (Zulu 11.2+3):
+`tests/data/generate_test_files.py` writes them from the 5 kb records of a
+Hi-C matrix of SRR1791297 (sacCer3), read with hicstraw 1.3.1, on OpenJDK
+11.0.1 (Zulu 11.2+3):
 
 | File | Written by | Command |
 |---|---|---|

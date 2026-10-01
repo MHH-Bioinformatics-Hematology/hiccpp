@@ -23,19 +23,19 @@
   "sha256": "2a550ce0deca5e97dfb025f15f5cd6c3aed18579225f4c7c74f0b2a1b8a4a028",
   "size": 1794416
  },
- "@hicx/hicCorrectMatrix/gm12878_KR.cool": {
+ "@extra/hicCorrectMatrix/gm12878_KR.cool": {
   "sha256": "aacaeaeb52f0e3bb01d332432b617ef5452a3af9bfeffe9cb16cab93dfa30758",
   "size": 2130904
  },
- "@hicx/hicCorrectMatrix/gm12878_raw_values.cool": {
+ "@extra/hicCorrectMatrix/gm12878_raw_values.cool": {
   "sha256": "674b13c0831ea8e6f98036ef1f2dbdfc3ba1cac319fcb09d04f0d20d685aee6d",
   "size": 1480300
  },
- "@hicx/hicDifferentialTAD/GSM2644945_Untreated-R1.100000_chr1.cool": {
+ "@extra/hicDifferentialTAD/GSM2644945_Untreated-R1.100000_chr1.cool": {
   "sha256": "3326ffe1c55464b9c49af72697c59f01fc49f2d11e6f9b7c6f51b752a68a18b1",
   "size": 9546363
  },
- "@hicx/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic": {
+ "@extra/hicHyperoptDetectLoopsHiCCUPS/SRR1791297_30.hic": {
   "sha256": "d9d378cbc6175ff51af4ab98636edf05109ae28d33b4175c4823c9dfa7030f66",
   "size": 5441566
  }
