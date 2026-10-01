@@ -9,6 +9,8 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 option(HICCPP_BUILD_TESTS "Build the doctest unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(HICCPP_BUILD_EXAMPLES "Build the example programs the documentation shows"
+    ${PROJECT_IS_TOP_LEVEL})
 option(HICCPP_BUILD_HARNESS "Build the equivalence harness driver" ${PROJECT_IS_TOP_LEVEL})
 
 if(PROJECT_IS_TOP_LEVEL)
@@ -80,6 +82,10 @@ install(FILES
 
 if(HICCPP_BUILD_HARNESS)
     add_subdirectory(harness)
+endif()
+
+if(HICCPP_BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
 
 if(HICCPP_BUILD_TESTS)

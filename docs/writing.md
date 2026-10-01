@@ -5,28 +5,26 @@ tools `pre` does, and computes the normalization vectors `addNorm` computes.
 The source hands over the pixels of one chromosome pair at a time, so a whole
 matrix never has to be in memory.
 
-```cpp
-#include <hiccpp/hiccpp.hpp>
+The whole of `examples/write_hic.cpp`, which implements a `PixelSource` over a
+matrix held in memory, writes it at two resolutions with the normalization
+vectors, and reads the file back:
 
-class MySource : public hiccpp::PixelSource {
-  public:
-    void pixels(std::int32_t resolution, std::int32_t chr1, std::int32_t chr2,
-                const std::function<void(const hiccpp::Pixel*, std::size_t)>& consume) override {
-        // hand over the pixels of this pair at this resolution, in any number of batches
-    }
-};
-
-hiccpp::WriteOptions options;
-options.version = 9;
-options.genomeId = "hg38";
-options.chromosomes = {{"chr1", 248956422}, {"chr2", 242193529}};
-options.sourceResolution = 5000;
-options.resolutions = {5000, 10000, 100000, 1000000};
-options.threads = 8;
-
-MySource source;
-hiccpp::writeHicFile("out.hic", options, source);
+```cpp title="examples/write_hic.cpp"
+--8<-- "examples/write_hic.cpp"
 ```
+
+```
+$ write_hic out.hic 9
+wrote out.hic: version 9, resolutions 50000 10000
+chr1 holds 5 records at 10000 bp
+vector VC
+vector VC_SQRT
+vector SCALE
+```
+
+A source that reads its pixels from elsewhere, a database or another file, hands
+them over in as many batches as it likes; the writer never holds more than one
+chromosome pair.
 
 Versions 6 and 7 are refused with their own message: no Juicer tools release
 that writes them can be obtained to validate against.

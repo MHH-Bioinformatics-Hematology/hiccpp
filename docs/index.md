@@ -11,12 +11,23 @@ SCALE normalization vectors, and the restriction fragment resolutions of
 depend on the number of threads.
 
 ```cpp
+#include <iostream>
+#include <vector>
 #include <hiccpp/hiccpp.hpp>
 
-hiccpp::HiCFile hic("matrix.hic");
-auto mzd = hic.getMatrixZoomData("chr1", "chr1", "observed", "KR", "BP", 10000);
-auto records = mzd.getRecords(0, 5000000, 0, 5000000);
+int main() {
+    const hiccpp::HiCFile hic("matrix.hic");
+    hiccpp::MatrixZoomData mzd =
+        hic.getMatrixZoomData("chr1", "chr1", "observed", "KR", "BP", 10000);
+    const std::vector<hiccpp::ContactRecord> records = mzd.getRecords(0, 5000000, 0, 5000000);
+    std::cout << records.size() << " records\n";
+    return 0;
+}
 ```
+
+The programs under [`examples/`](https://github.com/MHH-Bioinformatics-Hematology/hiccpp/tree/main/examples)
+are complete and build with the library: `read_hic` reads a file and
+`write_hic` writes one. The pages that follow show them in full.
 
 What the library does not do is listed in [the deviations page](DEVIATIONS.md): writing versions 6
 and 7 is refused, since no obtainable Juicer tools release writes them to
