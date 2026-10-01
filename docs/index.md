@@ -1,0 +1,42 @@
+# hiccpp
+
+A C++20 library that reads the Juicer `.hic` format, versions 6 to 9, and writes
+versions 8 and 9, without Python or Java.
+
+Reading reproduces hicstraw 1.3.1 record for record. Writing reproduces Juicer
+tools `pre` and `addNorm`: version 8 files follow release 1.22.01, version 9
+files release 2.20.00, including the expected values, the VC, VC_SQRT, KR and
+SCALE normalization vectors, and the restriction fragment resolutions of
+`pre -f`. Blocks are compressed on several threads, and the output does not
+depend on the number of threads.
+
+```cpp
+#include <hiccpp/hiccpp.hpp>
+
+hiccpp::HiCFile hic("matrix.hic");
+auto mzd = hic.getMatrixZoomData("chr1", "chr1", "observed", "KR", "BP", 10000);
+auto records = mzd.getRecords(0, 5000000, 0, 5000000);
+```
+
+What the library does not do is listed in [](DEVIATIONS.md): writing versions 6
+and 7 is refused, since no obtainable Juicer tools release writes them to
+validate against.
+
+```{toctree}
+:maxdepth: 2
+:caption: Guide
+
+install
+reading
+writing
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Reference
+
+api
+API_MAPPING
+DEVIATIONS
+PROVENANCE
+```
