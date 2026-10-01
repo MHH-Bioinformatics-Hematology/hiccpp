@@ -17,6 +17,19 @@ cmake --build build -j
 A program outside this repository builds against an installed hiccpp as
 [the installation page](install.md) describes; the sources below need no change.
 
+## Quickstart
+
+`quickstart` opens a file and reads the records of one chromosome.
+
+```cpp title="examples/quickstart.cpp"
+--8<-- "examples/quickstart.cpp"
+```
+
+```
+$ quickstart GM12878_combined_30.chr21_chr22.v7.hic 21 250000
+10319 records on 21 at 250000 bp, 2.75158e+07 contacts
+```
+
 ## Reading a file
 
 `read_hic` prints the metadata of a file of version 6 to 9, reads the records of

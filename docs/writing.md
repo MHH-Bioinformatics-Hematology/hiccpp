@@ -5,11 +5,22 @@ tools `pre` does, and computes the normalization vectors `addNorm` computes.
 The source hands over the pixels of one chromosome pair at a time, so a whole
 matrix never has to be in memory.
 
-`write_hic` on [the examples page](examples.md#writing-a-file) is a complete
-program that implements a `PixelSource` over a matrix held in memory and writes
-it at two resolutions with the normalization vectors. A source that reads its
-pixels from elsewhere, a database or another file, hands them over in as many
-batches as it likes; the writer never holds more than one chromosome pair.
+```cpp title="examples/write_hic.cpp"
+--8<-- "examples/write_hic.cpp"
+```
+
+```
+$ write_hic out.hic 9
+wrote out.hic: version 9, resolutions 50000 10000
+chr1 holds 5 records at 10000 bp
+vector VC
+vector VC_SQRT
+vector SCALE
+```
+
+A source that reads its pixels from elsewhere, a database or another file, hands
+them over in as many batches as it likes; the writer never holds more than one
+chromosome pair.
 
 Versions 6 and 7 are refused with their own message: no Juicer tools release
 that writes them can be obtained to validate against.

@@ -10,19 +10,13 @@ SCALE normalization vectors, and the restriction fragment resolutions of
 `pre -f`. Blocks are compressed on several threads, and the output does not
 depend on the number of threads.
 
-```cpp
-#include <iostream>
-#include <vector>
-#include <hiccpp/hiccpp.hpp>
+```cpp title="examples/quickstart.cpp"
+--8<-- "examples/quickstart.cpp"
+```
 
-int main() {
-    const hiccpp::HiCFile hic("matrix.hic");
-    hiccpp::MatrixZoomData mzd =
-        hic.getMatrixZoomData("chr1", "chr1", "observed", "KR", "BP", 10000);
-    const std::vector<hiccpp::ContactRecord> records = mzd.getRecords(0, 5000000, 0, 5000000);
-    std::cout << records.size() << " records\n";
-    return 0;
-}
+```
+$ quickstart GM12878_combined_30.chr21_chr22.v7.hic 21 250000
+10319 records on 21 at 250000 bp, 2.75158e+07 contacts
 ```
 
 [The examples page](examples.md) carries two complete programs that build with
