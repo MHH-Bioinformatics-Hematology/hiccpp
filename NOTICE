@@ -1,0 +1,19 @@
+hicfilecpp reads and writes the Juicer .hic format and reproduces the
+behaviour of the implementations named, part by part, in docs/PROVENANCE.md.
+Those projects are MIT licensed, as is this library.
+
+straw (https://github.com/aidenlab/straw), MIT licence, Aiden Lab: the
+reading API and query semantics of hicstraw 1.3.1 are re-implemented in
+src/reader.cpp, which names the hicstraw function each part follows.
+
+Juicer tools and Juicebox (https://github.com/aidenlab/Juicebox), MIT licence,
+Aiden Lab: the .hic format itself and the writing behaviour of releases
+1.22.01 (version 8) and 2.20.00 (version 9) are re-implemented in
+src/writer.cpp and src/norms.cpp, which name the Java method each part
+follows.
+
+hic2cool (https://github.com/4dn-dcic/hic2cool), MIT licence, Harvard Medical
+School: served as a second reading of the version 8 layout.
+
+The test files under tests/data are derived from public deposits; their origin
+and the commands that made them are in docs/PROVENANCE.md.

@@ -1,5 +1,11 @@
 # Provenance
 
+## Licence
+
+hicfilecpp is MIT licensed (`LICENSE`), the licence of straw, Juicer tools and
+hic2cool, whose behaviour and format it follows. `NOTICE` summarises the
+attributions; the sections below name them part by part.
+
 ## Implementations this library follows
 
 - **Reading** follows hicstraw 1.3.1, `pybind11_python/src/straw.cpp` of
